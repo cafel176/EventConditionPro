@@ -22,11 +22,11 @@
  * 
  * @command enable
  * @text 当前事件页使用增强条件
- * @desc 当前事件页想要使用增强条件时，在事件页开头使用本指令，不想时删除本指令，其他指令会自动失效
+ * @desc 当前事件页想要使用增强条件时，在事件页开头使用本指令，不想时关闭本指令，其他指令会自动失效
  * 
  * @arg enable
  * @text 是否启用
- * @desc 是否启用
+ * @desc 打开时完全不考虑RM原生的条件仅判断插件条件，关闭反之
  * @type boolean
  * @default true
  * 
@@ -36,55 +36,10 @@
  * @text 条件
  * @desc 条件
  * 
- * @arg name
- * @text 名称
- * @desc 本条件的比较结果会保存在这么一个名字的临时变量里以供取用
- * 
- * @arg negative
- * @text 取反
- * @desc 对当前条件的结果取反
- * @type boolean
- * @default false
- * 
- * @arg type
- * @text 条件类型
- * @desc 条件类型
- * @type select
- * 
- * @option 开关
- * @value switch
- * @option 变量
- * @value variable
- * @option 独立开关
- * @value selfSwitch
- * @option 物品
- * @value item
- * @option 角色
- * @value actor
- * @option 脚本
- * @value script
- * 
- * @arg checkType
- * @text 比较类型
- * @desc 比较类型，对于非变量类，只分为等于和其他两种
- * @type select
- * 
- * @option 等于
- * @value equal
- * @option 不等于
- * @value notEqual
- * @option 大于
- * @value Greater
- * @option 小于
- * @value Less
- * @option 大于等于
- * @value GreaterEqual
- * @option 小于等于
- * @value LessEqual
- * 
- * @arg checkTarget
- * @text 比较对象
- * @desc 比较相对的另一个对象，变量和开关请写序号，独立开关用名字
+ * @arg conditions
+ * @text 条件列表
+ * @type struct<Condition>[]
+ * @default []
  * 
  * 
  * 
@@ -184,6 +139,62 @@
  * 
  */
 
+/*~struct~Condition:
+ * @param name
+ * @text 名称
+ * @desc 本条件的比较结果会保存在这么一个名字的临时变量里以供取用
+ * 
+ * @param negative
+ * @text 取反
+ * @desc 对当前条件的结果取反
+ * @type boolean
+ * @default false
+ * 
+ * @param type
+ * @text 条件类型
+ * @desc 条件类型
+ * @type select
+ * 
+ * @option 开关
+ * @value switch
+ * @option 变量
+ * @value variable
+ * @option 独立开关
+ * @value selfSwitch
+ * @option 物品
+ * @value item
+ * @option 角色
+ * @value actor
+ * @option 脚本
+ * @value script
+ * 
+ * @param checkTarget1
+ * @text 比较对象1
+ * @desc 变量、开关、物品、角色请写序号，独立开关用名字，脚本直接写
+ * 
+ * @param checkType
+ * @text 比较类型
+ * @desc 比较类型，对于开关类，只分为等于和其他两种
+ * @type select
+ * 
+ * @option 等于
+ * @value equal
+ * @option 不等于
+ * @value notEqual
+ * @option 大于
+ * @value Greater
+ * @option 小于
+ * @value Less
+ * @option 大于等于
+ * @value GreaterEqual
+ * @option 小于等于
+ * @value LessEqual
+ * 
+ * @param checkTarget2
+ * @text 比较对象2
+ * @desc 比较相对的另一个对象，变量和开关请写序号，独立开关用名字
+ */
+
 /*~struct~VariableList:
  * @param variables
  * @text 变量列表
@@ -270,8 +281,133 @@ var EventConditionPro_ClearTempValue = function (page) {
     page.EventConditionPro_TempValues = {}
 }
 
+// 比较两个值
+var EventConditionPro_Check = function (checkType, value1, value2) {
+    if (checkType === "equal") {
+        return value1 === value2;
+    }
+    else if (checkType === "notEqual") {
+        return value1 !== value2;
+    }
+    else if (checkType === "Greater") {
+        if (typeof value1 === "number") {
+            return value1 > value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "Less") {
+        if (typeof value1 === "number") {
+            return value1 < value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "GreaterEqual") {
+        if (typeof value1 === "number") {
+            return value1 >= value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "LessEqual") {
+        if (typeof value1 === "number") {
+            return value1 <= value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else {
+        console.log("未识别的检查")
+        return false
+    }
+}
+
+var EventConditionPro_GetSwitchValue = function (event, page, str) {
+    if (!str || str.length === 0) {
+        console.log("错误的字符，无法识别为开关")
+        return false
+    }
+
+    // 只有单个字符，判断是否是独立开关
+    if (str.length === 1) {
+        const char = str.charAt(0)
+        // 大写A-Z
+        if (char >= 65 && char <= 90) {
+            const key = [event._mapId, event._eventId, str];
+            return $gameSelfSwitches.value(key)
+        }
+        // 小写a-z
+        else if (char >= 97 && char <= 122) {
+            str = str.toUpperCase()
+            const key = [event._mapId, event._eventId, str];
+            return $gameSelfSwitches.value(key)
+        }
+    }   
+    else {
+        const char = str.charAt(0)
+        const last = str.substring(1)
+        // last是数字，判断是否是开关
+        if (char === "s" && !isNaN(parseFloat(last)) && isFinite(last)) {
+            const key = Number(last);
+            return $gameSwitches.value(key)
+        }
+        
+        // 判断是否是临时变量
+        let re = EventConditionPro_GetTempValue(page, str)
+        if (re !== null)
+            return re
+
+        // 判断是否是直接写的
+        str = str.toLowerCase()
+        if (str === "true") {
+            return true
+        }
+        else if (str === "false") {
+            return false
+        }
+    }
+
+    console.log("无法识别的开关")
+    return false
+}
+
+var EventConditionPro_GetVariableValue = function (event, page, str) {
+    if (!str || str.length === 0) {
+        console.log("错误的字符，无法识别为变量")
+        return -1
+    }
+
+    if (str.length > 1) {
+        const char = str.charAt(0)
+        const last = str.substring(1)
+        // last是数字，判断是否是变量
+        if (char === "v" && !isNaN(parseFloat(last)) && isFinite(last)) {
+            const key = Number(last);
+            return $gameVariables.value(key)
+        }
+    }
+
+    // 判断是否是临时变量
+    let re = EventConditionPro_GetTempValue(page, str)
+    if (re !== null)
+        return re
+
+    // 是数字
+    if (!isNaN(parseFloat(str)) && isFinite(str)) {
+        return Number(str)
+    }
+
+    console.log("无法识别的变量")
+    return -1
+}
+
 // 处理条件逻辑
-var EventConditionPro_ProcessPluginCommand = function (page, eventItem) {
+var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
     if (!eventItem) {
         console.log("条件为空，跳过")
         return null
@@ -283,7 +419,56 @@ var EventConditionPro_ProcessPluginCommand = function (page, eventItem) {
         return args.enable === "true"
     }
     else if (commandName === "condition") {
-        const resultName = String(args.name);
+        const conditions = JsonEx.parse(args.conditions);
+        for (let i = 0; i < conditions.length; i++) {
+            const condition = JsonEx.parse(conditions[i])
+
+            const resultName = String(condition.name);
+            const negative = (condition.negative === "true")
+            const type = String(condition.type);
+            const checkType = String(condition.checkType);
+
+            if (type === "switch") {
+                const checkTarget1 = Number(condition.checkTarget1);
+                const value1 = $gameSwitches.value(checkTarget1)
+                const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
+                const re = EventConditionPro_Check(checkType, value1, value2)
+                EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+            }
+            else if (type === "variable") {
+                const checkTarget1 = Number(condition.checkTarget1);
+                const value1 = $gameVariables.value(checkTarget1)
+                const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
+                const re = EventConditionPro_Check(checkType, value1, value2)
+                EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+            }
+            else if (type === "selfSwitch") {
+                const checkTarget1 = String(condition.checkTarget1);
+                const key1 = [event._mapId, event._eventId, checkTarget1.toUpperCase()];
+                const value1 = $gameSelfSwitches.value(key1)
+                const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
+                const re = EventConditionPro_Check(checkType, value1, value2)
+                EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+            }
+            else if (type === "item") {
+                const checkTarget1 = Number(condition.checkTarget1);
+                if (checkTarget1 >= 0 && checkTarget1 < $dataItems.length) {
+                    const item = $dataItems[checkTarget1];
+                    const re = $gameParty.hasItem(item)
+                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                }
+            }
+            else if (type === "actor") {
+                const checkTarget1 = Number(condition.checkTarget1);
+                const actor = $gameActors.actor(checkTarget1);
+                const re = $gameParty.members().includes(actor)
+                EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+            }
+            else if (type === "script") {
+                const re = eval(condition.checkTarget1)
+                EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+            }
+        }
 
         return true
     }
@@ -294,8 +479,34 @@ var EventConditionPro_ProcessPluginCommand = function (page, eventItem) {
     }
     else if (commandName === "expression") {
         const resultName = String(args.name);
+        const negative = (args.negative === "true")
+        const operates = JsonEx.parse(args.operates);
 
-        return 
+        let result = true
+        for (let i = 0; i < operates.length; i++) {
+            const operate = JsonEx.parse(operates[i])
+
+            const negative1 = (operate.negative1 === "true")
+            const negative2 = (operate.negative2 === "true")
+            const type = String(operate.type)
+            const operateTarget = String(operate.operateTarget)
+
+            if (negative1) {
+                result = !result
+            }
+
+            let re = EventConditionPro_GetTempValue(page, operateTarget)
+            re = (negative2 ? !re : re)
+            if (type === "and") {
+                result = (result && re)
+            }
+            else if (type === "or") {
+                result = (result || re)
+            }
+        }
+        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !result : result))
+
+        return true
     }
     else if (commandName === "submit") {
         const name = String(args.name);
@@ -328,17 +539,16 @@ var EventConditionPro_GetConditions = function (page) {
 }
 
 // 处理条件逻辑
-var EventConditionPro_ProcessConditions = function (page, conditions) {
+var EventConditionPro_ProcessConditions = function (event, page, conditions) {
     for (let index = 0; index < conditions.length; ++index) {
-        let re = EventConditionPro_ProcessPluginCommand(page, conditions[index])
-        if (!re) {
-            continue;
-        }
-
+        let re = EventConditionPro_ProcessPluginCommand(event, page, conditions[index])
         const commandName = conditions[index].parameters[1]
         if (commandName === "submit") {
             EventConditionPro_ClearTempValue(page)
             return re
+        }
+        else if (!re) {
+            continue;
         }
     }
 
@@ -361,7 +571,7 @@ var EventConditionPro_GetTriggers = function (page) {
 }
 
 // 加载时将插件指令归类
-var EventConditionPro_Load = function (page) {
+var EventConditionPro_Load = function (event, page) {
     page.EventConditionPro_Contions = []
     page.EventConditionPro_Triggers = []
 
@@ -375,13 +585,11 @@ var EventConditionPro_Load = function (page) {
                 const pluginCommand = page.list[index].parameters[1]
                 // 是enbale
                 if (pluginCommand === "enable") {
-                    if (!EventConditionPro_ProcessPluginCommand(page, page.list[index])) {
-                        page.EventConditionPro_Contions = []
-                        page.EventConditionPro_Triggers = []
-                        return page;
+                    // 要考虑input，所以false下不能直接结束
+                    if (EventConditionPro_ProcessPluginCommand(event, page, page.list[index])) {
+                        Enable = true
+                        page.EventConditionPro_Contions.push(page.list[index])
                     }
-                    Enable = true
-                    page.EventConditionPro_Contions.push(page.list[index])
                 }
                 // 是input
                 else if (pluginCommand === "input") {
@@ -395,7 +603,6 @@ var EventConditionPro_Load = function (page) {
     }
     if (!Enable) {
         page.EventConditionPro_Contions = []
-        page.EventConditionPro_Triggers = []
         return page;
     }
 
@@ -459,7 +666,7 @@ DataManager.onLoad = function (object) {
                 continue;
 
             for (let j = $dataMap.events[i].pages.length - 1; j >= 0; --j) {
-                EventConditionPro_Load($dataMap.events[i].pages[j]);
+                EventConditionPro_Load($dataMap.events[i], $dataMap.events[i].pages[j]);
             }
         }
 
@@ -471,16 +678,21 @@ DataManager.onLoad = function (object) {
 // ============================================================================= //
 // 对事件做处理，加入条件和触发的判断
 // ============================================================================= //
+
 // 并行处理的按键处理
 var EventConditionPro_Game_Event_setupPageSettings = Game_Event.prototype.setupPageSettings
 Game_Event.prototype.setupPageSettings = function () {
     EventConditionPro_Game_Event_setupPageSettings.call(this)
 
     const page = this.page();
+    EventConditionPro_Load(this, page);
+
+    this.canParallel = true
+
     const Triggers = EventConditionPro_GetTriggers(page)
-    if (Triggers && Triggers.length > 0) {
+    if (Triggers && Triggers.length > 0 && this._trigger === 4) {
         // 暂时停止并行处理的自动触发
-        this._interpreter = null;
+        this.canParallel = false
     }
 }
 
@@ -488,32 +700,34 @@ Game_Event.prototype.setupPageSettings = function () {
 var EventConditionPro_Game_Event_updateParallel = Game_Event.prototype.updateParallel;
 Game_Event.prototype.updateParallel = function () {
     // 判断并行处理的自动触发
-    if (!this._interpreter && this._trigger === 4) {
+    if (this._trigger === 4 && !this.canParallel) {
         const page = this.page();
         const Triggers = EventConditionPro_GetTriggers(page)
         if (Triggers && Triggers.length > 0) {
             let Check = true
             for (let i = 0; i < Triggers.length; ++i) {
-                if (!EventConditionPro_ProcessPluginCommand(page, Triggers[i])) {
+                if (!EventConditionPro_ProcessPluginCommand(this, page, Triggers[i])) {
                     Check = false
                     break
                 }
-            };
+            }
             if (Check) {
-                this._interpreter = new Game_Interpreter();
+                this.canParallel = true
             }
         }
     }
 
-    EventConditionPro_Game_Event_updateParallel.call(this)
+    if (this.canParallel) {
+        EventConditionPro_Game_Event_updateParallel.call(this)
+    }
 
     // 判断并行处理的自动停止
-    if (this._interpreter && this._trigger === 4) {
+    if (this._trigger === 4 && this.canParallel) {
         const page = this.page();
         const Triggers = EventConditionPro_GetTriggers(page)
         if (Triggers && Triggers.length > 0) {
             if (!this._interpreter.isRunning()) {
-                this._interpreter = null
+                this.canParallel = false
             }
         }
     }
@@ -522,9 +736,11 @@ Game_Event.prototype.updateParallel = function () {
 // 条件处理
 var EventConditionPro_Game_Event_meetsConditions = Game_Event.prototype.meetsConditions;
 Game_Event.prototype.meetsConditions = function (page) {
+    EventConditionPro_Load(this, page);
+
     const Contions = EventConditionPro_GetConditions(page)
     if (Contions && Contions.length > 0) {
-        return EventConditionPro_ProcessConditions(page, Contions)
+        return EventConditionPro_ProcessConditions(this, page, Contions)
     }
     else {
         return EventConditionPro_Game_Event_meetsConditions.call(this, page)
