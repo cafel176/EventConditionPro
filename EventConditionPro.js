@@ -21,8 +21,8 @@
  * 
  * 
  * @command enable
- * @text 当前事件页使用增强条件
- * @desc 当前事件页想要使用增强条件时，在事件页开头使用本指令，不想时关闭本指令，其他指令会自动失效
+ * @text 当前事件页使用出现条件
+ * @desc 当前事件页想要使用出现条件时，在事件页开头使用本指令，不想时关闭本指令，其他指令会自动失效
  * 
  * @arg enable
  * @text 是否启用
@@ -33,7 +33,16 @@
  * 
  * 
  * @command condition
- * @text 条件
+ * @text 条件(用于出现条件)
+ * @desc 条件
+ * 
+ * @arg conditions
+ * @text 条件列表
+ * @type struct<Condition>[]
+ * @default []
+ * 
+ * @command condition_event
+ * @text 条件(用于事件)
  * @desc 条件
  * 
  * @arg conditions
@@ -43,52 +52,47 @@
  * 
  * 
  * 
- * @command variableCondition
- * @text 变量组合条件
- * @desc 变量组合条件
+ * @command variable
+ * @text 变量(用于出现条件)
+ * @desc 变量
  * 
- * @arg name
- * @text 名称
- * @desc 本条件的比较结果会保存在这么一个名字的临时变量里以供取用
- * 
- * @arg negative
- * @text 取反
- * @desc 对当前条件的结果取反
- * @type boolean
- * @default false
- * 
- * @arg variables1
- * @text 变量列表1
- * @type struct<VariableList>
+ * @arg variables
+ * @text 变量列表
+ * @type struct<Variable>[]
  * @default []
  * 
- * @arg checkType
- * @text 比较类型
- * @desc 比较类型
- * @type select
+ * @command variable_event
+ * @text 变量(用于事件)
+ * @desc 变量
  * 
- * @option 等于
- * @value equal
- * @option 不等于
- * @value notEqual
- * @option 大于
- * @value Greater
- * @option 小于
- * @value Less
- * @option 大于等于
- * @value GreaterEqual
- * @option 小于等于
- * @value LessEqual
- * 
- * @arg variables2
- * @text 变量列表2
- * @type struct<VariableList>
+ * @arg variables
+ * @text 变量列表
+ * @type struct<Variable>[]
  * @default []
  * 
  * 
  * 
  * @command expression
- * @text 条件运算
+ * @text 运算(用于出现条件)
+ * @desc 通过条件名字对他们进行运算
+ * 
+ * @arg name
+ * @text 名称
+ * @desc 本运算的结果会保存在这么一个名字的临时变量里以供取用
+ * 
+ * @arg negative
+ * @text 取反
+ * @desc 对当前运算的结果取反
+ * @type boolean
+ * @default false
+ * 
+ * @arg operates
+ * @text 操作列表
+ * @type struct<Operate>[]
+ * @default []
+ * 
+ * @command expression_event
+ * @text 运算(用于事件)
  * @desc 通过条件名字对他们进行运算
  * 
  * @arg name
@@ -108,18 +112,16 @@
  * 
  * 
  * 
- * @command submit
- * @text 提交结果
- * @desc 提交结果
+ * @command log
+ * @text 输出(用于出现条件)
+ * @desc 输出
  * 
  * @arg name
  * @text 名称
- * @desc 将这么一个名字的临时变量的值提交作为事件页条件判断的结果
+ * @desc 输出这么一个名字的临时变量的值以供调试
  * 
- * 
- * 
- * @command log
- * @text 输出
+ * @command log_event
+ * @text 输出(用于事件)
  * @desc 输出
  * 
  * @arg name
@@ -128,8 +130,68 @@
  * 
  * 
  * 
+ * @command submit
+ * @text 提交结果(用于出现条件)
+ * @desc 提交结果
+ * 
+ * @arg name
+ * @text 名称
+ * @desc 将这么一个名字的临时变量的值提交作为事件页条件判断的结果
+ * 
+ * 
+ * 
+ * @command clear
+ * @text 清空临时变量(用于事件)
+ * @desc 清空临时变量
+ * 
+ * 
+ * 
+ * @command selfSwitch
+ * @text 独立开关(用于事件)
+ * @desc 独立开关
+ * 
+ * @arg type
+ * @text 开关
+ * @desc 开关
+ * @type select
+ * 
+ * @option A
+ * @option B
+ * @option C
+ * @option D
+ * @option E
+ * @option F
+ * @option G
+ * @option H
+ * @option I
+ * @option J
+ * @option K
+ * @option L
+ * @option M
+ * @option N
+ * @option O
+ * @option P
+ * @option Q
+ * @option R
+ * @option S
+ * @option T
+ * @option U
+ * @option V
+ * @option W
+ * @option X
+ * @option Y
+ * @option Z
+ * 
+ * @arg value
+ * @text 取值
+ * @desc 
+ * @type boolean
+ * @default true
+ * 
+ * 
+ * 
  * @command input
- * @text 触发按键
+ * @text 触发按键(用于触发条件)
  * @desc 触发按键
  * 
  * @arg keyCode
@@ -137,6 +199,17 @@
  * @desc 将事件触发条件的并行处理增加一个按键判断
  * @type number
  * 
+ * @arg type
+ * @text 触发类型
+ * @desc 触发类型
+ * @type select
+ * 
+ * @option 被按下
+ * @value Pressed
+ * @option 被触发
+ * @value Triggered
+ * @option 被重复
+ * @value Repeated
  */
 
 /*~struct~Condition:
@@ -155,22 +228,32 @@
  * @desc 条件类型
  * @type select
  * 
+ * @option 临时变量
+ * @value tempVariable
  * @option 开关
  * @value switch
  * @option 变量
  * @value variable
  * @option 独立开关
  * @value selfSwitch
- * @option 物品
+ * @option 时间
+ * @value timer
+ * @option 物品/武器/防具(不包括装备着的)
  * @value item
+ * @option 金币
+ * @value gold
+ * @option 事件朝向
+ * @value direction
  * @option 角色
  * @value actor
+ * @option 按键
+ * @value input
  * @option 脚本
  * @value script
  * 
  * @param checkTarget1
  * @text 比较对象1
- * @desc 变量、开关、物品、角色请写序号，独立开关用名字，脚本直接写
+ * @desc 变量、开关、物品、角色请写序号，独立开关用名字，脚本直接写，金币和时间不用写
  * 
  * @param checkType
  * @text 比较类型
@@ -192,33 +275,55 @@
  * 
  * @param checkTarget2
  * @text 比较对象2
- * @desc 比较相对的另一个对象，变量和开关请写序号，独立开关用名字
+ * @desc 比较相对的另一个对象，变量和开关请写序号，独立开关用名字，时间写秒
  */
 
-/*~struct~VariableList:
- * @param variables
- * @text 变量列表
- * @type struct<VariableInfo>[]
- * @default []
+/*~struct~Variable:
+ * @param name
+ * @text 名称
+ * @desc 运算结果会保存在这么一个名字的临时变量里以供取用
  * 
- * @param type
- * @text 变量组合类型
- * @desc 变量组合类型
+ * @param negative1
+ * @text 取负数
+ * @desc 对比较对象1取负数
+ * @type boolean
+ * @default false
+ * 
+ * @param checkTarget1
+ * @text 运算对象1
+ * @desc 
+ * 
+ * @param checkType
+ * @text 运算类型
+ * @desc 运算类型
  * @type select
  * 
- * @option 求和
- * @value sum
- * @option 最大
+ * @option 加
+ * @value add
+ * @option 减
+ * @value minus
+ * @option 乘
+ * @value multiple
+ * @option 除
+ * @value divide
+ * @option 膜
+ * @value mod
+ * @option 取幂
+ * @value exponentiation
+ * @option 取大
  * @value max
- * @option 最小
+ * @option 取小
  * @value min
- */
-
-/*~struct~VariableInfo:
- * @param index
- * @text 变量序号
- * @desc 变量序号
- * @type number
+ * 
+ * @param negative2
+ * @text 取负数
+ * @desc 对比较对象2取负数
+ * @type boolean
+ * @default false
+ * 
+ * @param checkTarget2
+ * @text 运算对象2
+ * @desc 运算相对的另一个对象，变量和开关请写序号，独立开关用名字，时间写秒
  * 
  */
 
@@ -252,11 +357,52 @@
  */
 
 var EventConditionPro = EventConditionPro || {};
-EventConditionPro.param = PluginManager.parameters('EventConditionPro');
+EventConditionPro.pluginName = "EventConditionPro"
+EventConditionPro.param = PluginManager.parameters(EventConditionPro.pluginName);
+
+const AppearCondition = ["condition", "variable", "expression", "log", "submit"]
+const Triggers = ["input"]
 
 // ============================================================================= //
 // 插件指令
 // ============================================================================= //
+
+PluginManager.registerCommand(EventConditionPro.pluginName, "condition_event", function (args) {
+    EventConditionPro_ProcessPluginCommand($gameMap, $gameMap, this.currentCommand())  
+});
+
+PluginManager.registerCommand(EventConditionPro.pluginName, "variable_event", function (args) {
+    EventConditionPro_ProcessPluginCommand($gameMap, $gameMap, this.currentCommand())
+});
+
+PluginManager.registerCommand(EventConditionPro.pluginName, "expression_event", function (args) {
+    EventConditionPro_ProcessPluginCommand($gameMap, $gameMap, this.currentCommand())
+});
+
+PluginManager.registerCommand(EventConditionPro.pluginName, "log_event", function (args) {
+    EventConditionPro_ProcessPluginCommand($gameMap, $gameMap, this.currentCommand())
+});
+
+PluginManager.registerCommand(EventConditionPro.pluginName, "clear", function (args) {
+    EventConditionPro_ClearTempValue($gameMap)
+});
+
+PluginManager.registerCommand(EventConditionPro.pluginName, "selfSwitch", function (args) {
+    const type = String(args.type);
+    const value = (args.value === "true");
+
+    const key = [this._mapId, this._eventId, type];
+    $gameSelfSwitches.setValue(key, value);
+});
+
+var EventConditionPro_GetTempValue = function (name) {
+    EventConditionPro_GetTempValue($gameMap, name)
+}
+
+// ============================================================================= //
+// 插件逻辑
+// ============================================================================= //
+
 // 获取临时变量
 var EventConditionPro_GetTempValue = function (page, name) {
     if (('EventConditionPro_TempValues' in page) && page.EventConditionPro_TempValues) {
@@ -281,7 +427,7 @@ var EventConditionPro_ClearTempValue = function (page) {
     page.EventConditionPro_TempValues = {}
 }
 
-// 比较两个值
+// 比较和运算两个值
 var EventConditionPro_Check = function (checkType, value1, value2) {
     if (checkType === "equal") {
         return value1 === value2;
@@ -316,6 +462,70 @@ var EventConditionPro_Check = function (checkType, value1, value2) {
     else if (checkType === "LessEqual") {
         if (typeof value1 === "number") {
             return value1 <= value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "add") {
+        if (typeof value1 === "number") {
+            return value1 + value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "minus") {
+        if (typeof value1 === "number") {
+            return value1 - value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "multiple") {
+        if (typeof value1 === "number") {
+            return value1 * value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "divide") {
+        if (typeof value1 === "number") {
+            return value1 / value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "mod") {
+        if (typeof value1 === "number") {
+            return value1 % value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "exponentiation") {
+        if (typeof value1 === "number") {
+            return value1 ** value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "max") {
+        if (typeof value1 === "number") {
+            return Math.max(value1, value2);
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else if (checkType === "min") {
+        if (typeof value1 === "number") {
+            return Math.min(value1, value2);
         }
         else {
             return value1 !== value2;
@@ -428,7 +638,13 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
             const type = String(condition.type);
             const checkType = String(condition.checkType);
 
-            if (type === "switch") {
+            if (type === "tempVariable") {
+                const value1 = EventConditionPro_GetTempValue(page, condition.checkTarget1)
+                const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
+                const re = EventConditionPro_Check(checkType, value1, value2)
+                EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+            }
+            else if (type === "switch") {
                 const checkTarget1 = Number(condition.checkTarget1);
                 const value1 = $gameSwitches.value(checkTarget1)
                 const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
@@ -438,7 +654,7 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
             else if (type === "variable") {
                 const checkTarget1 = Number(condition.checkTarget1);
                 const value1 = $gameVariables.value(checkTarget1)
-                const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
+                const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
@@ -450,13 +666,29 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            else if (type === "timer") {
+                if ($gameTimer.isWorking()) {
+                    const value1 = $gameTimer.frames() / 60;
+                    const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
+                    const re = EventConditionPro_Check(checkType, value1, value2)
+                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                }
+            }
             else if (type === "item") {
                 const checkTarget1 = Number(condition.checkTarget1);
                 if (checkTarget1 >= 0 && checkTarget1 < $dataItems.length) {
                     const item = $dataItems[checkTarget1];
-                    const re = $gameParty.hasItem(item)
+                    const value1 = $gameParty.numItems(item)
+                    const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
+                    const re = EventConditionPro_Check(checkType, value1, value2)
                     EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
                 }
+            }
+            else if (type === "gold") {
+                const value1 = $gameParty.gold()
+                const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
+                const re = EventConditionPro_Check(checkType, value1, value2)
+                EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
             else if (type === "actor") {
                 const checkTarget1 = Number(condition.checkTarget1);
@@ -464,16 +696,55 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const re = $gameParty.members().includes(actor)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            else if (type === "direction") {
+                const checkTarget1 = Number(condition.checkTarget1);
+                const checkTarget2 = Number(condition.checkTarget2);
+                let character = this.character(checkTarget1);
+                if (character) {
+                    const re = (character.direction() === checkTarget2);
+                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                }
+            }
+            else if (type === "input") {
+                const keyCode = Number(condition.checkTarget1);
+                if (!(keyCode in Input.keyMapper)) {
+                    Input.keyMapper[keyCode] = String(keyCode);
+                }
+                let re = false;
+                if (type === "Triggered") {
+                    re = Input.isTriggered(String(keyCode))
+                }
+                else if (type === "Repeated") {
+                    re = Input.isRepeated(String(keyCode))
+                }
+                else {
+                    re = Input.isPressed(String(keyCode))
+                }
+                EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+            }
             else if (type === "script") {
-                const re = eval(condition.checkTarget1)
+                const re = !!eval(condition.checkTarget1)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
         }
 
         return true
     }
-    else if (commandName === "variableCondition") {
-        const resultName = String(args.name);
+    else if (commandName === "variable") {
+        const variables = JsonEx.parse(args.variables);
+        for (let i = 0; i < variables.length; i++) {
+            const variable = JsonEx.parse(variables[i])
+
+            const resultName = String(variable.name);
+            const negative1 = (variable.negative1 === "true")
+            const negative2 = (variable.negative2 === "true")
+            const checkType = String(variable.checkType);
+
+            const value1 = EventConditionPro_GetVariableValue(event, page, variable.checkTarget1)
+            const value2 = EventConditionPro_GetVariableValue(event, page, variable.checkTarget2)
+            const re = EventConditionPro_Check(checkType, (negative1 ? -1 : 1) * value1, (negative2 ? -1 : 1) * value2)
+            EventConditionPro_AddOrSetTempValue(page, resultName, re)
+        }
 
         return true
     }
@@ -519,10 +790,23 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
     }
     else if (commandName === "input") {
         const keyCode = Number(args.keyCode);
+        const type = String(args.type);
+
         if (!(keyCode in Input.keyMapper)) {
             Input.keyMapper[keyCode] = String(keyCode);
         }
-        return Input.isTriggered(String(keyCode))
+
+        if (type === "Pressed") {
+            return Input.isPressed(String(keyCode))
+        }
+        else if (type === "Triggered") {
+            return Input.isTriggered(String(keyCode))
+        }
+        else if (type === "Repeated") {
+            return Input.isRepeated(String(keyCode))
+        }
+
+        return false
     }
 
     console.log("未识别的指令，跳过")
@@ -581,7 +865,7 @@ var EventConditionPro_Load = function (event, page) {
         if (page.list[index].code === 357) {
             const pluginName = page.list[index].parameters[0]
             // 检查是否是当前插件
-            if (pluginName.includes("EventConditionPro")) {
+            if (pluginName.includes(EventConditionPro.pluginName)) {
                 const pluginCommand = page.list[index].parameters[1]
                 // 是enbale
                 if (pluginCommand === "enable") {
@@ -591,11 +875,10 @@ var EventConditionPro_Load = function (event, page) {
                         page.EventConditionPro_Contions.push(page.list[index])
                     }
                 }
-                // 是input
-                else if (pluginCommand === "input") {
+                else if (Triggers.includes(pluginCommand)) {
                     page.EventConditionPro_Triggers.push(page.list[index])
                 }
-                else {
+                else if (AppearCondition.includes(pluginCommand)){
                     page.EventConditionPro_Contions.push(page.list[index])
                 }
             }
