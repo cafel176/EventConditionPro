@@ -4,7 +4,7 @@
 
 /*:
  * @plugindesc 当前版本 V1
- * 事件页出现条件增强插件，适用于RMMZ和RMMV
+ * 逻辑和运算增强插件，适用于RMMZ和RMMV
  * @author cafel
  * @target MZ
  * @url https://github.com/cafel176/EventConditionPro
@@ -13,20 +13,81 @@
  * 
  * 
  * 
+ * ★ 本插件提供如下支持：
+ * 
+ * 1. 支持通过插件指令进行各种复杂的逻辑和数值运算，其结果可用于事件出现条件和事件页内条件分歧
+ *    整体设计流程如下：
+ *    ♦ 通过条件和变量指令进行基础的逻辑和数值运算，并将基础结果保存在临时变量
+ *    ♦ 通过运算指令对刚才得到的临时变量进行各种组合运算得到一个复杂的结果
+ *    ♦ 将该结果用于事件出现条件和事件页内条件分歧
+ * 
+ * 2. 支持自定义复杂的事件出现条件，对于并行处理，支持定义任意按键触发
+ *    ♦ 通过插件指令构成的系统，可以满足任意复杂的事件出现条件
+ * 
+ * 3. 支持 A-Z 26个独立开关
  * 
  * 
  * 
+ * ★ 插件指令：
  * 
+ * 1. 当前事件页使用出现条件：让事件页使用自定义出现条件，要在事件页开头设置一个本指令并将参数设置为true
+ *    设置了本指令的事件页会完全使用自定义条件忽略RM原生条件，关闭则反之
+ *    设置好后，当前事件页所有带有 (用于出现条件) 的指令都会被纳入考量，不用时关闭本指令即可，无需大量删除
+ * 
+ * 2. 条件(用于出现条件)：通过条件列表设置一组条件，每一条条件的结果会保存到一个临时变量中供后续取用
+ * 
+ * 3. 条件(用于事件)：功能同上，但是用于事件页内
+ * 
+ * 4. 变量(用于出现条件)：通过变量列表设置一组变量，每一条条件的结果会保存到一个临时变量中供后续取用
+ * 
+ * 5. 变量(用于事件)：功能同上，但是用于事件页内
+ * 
+ * 6. 运算(用于出现条件)：对一组临时变量进行逻辑组合，输出复杂的结果保存到另一个临时变量中供后续取用
+ * 
+ * 7. 运算(用于事件)：功能同上，但是用于事件页内
+ * 
+ * 8. 输出(用于出现条件)：将一个临时变量的值输出到控制台
+ * 
+ * 9. 输出(用于事件)：功能同上，但是用于事件页内
+ * 
+ * 10. 提交结果(用于出现条件)：将一个临时变量作为事件页的出现条件的最终判定结果提交
+ * 
+ * 11. 清空临时变量(用于事件)：事件页内执行运算时，为保证临时变量不互相影响，在每个逻辑块的开头可以清除之前的变量
+ * 
+ * 12. 独立开关(用于事件)：用本指令可以设置超过D的独立开关
+ * 
+ * 13. 触发按键(用于触发条件)：在并行处理的事件页内使用，可以自定义按键来触发事件
+ * 
+ * 
+ * 
+ * ★ 指令参数：
+ * 
+ * 1. [开关]：开关类参数允许以下类型：
+ *    ♦ 单个字母A-Z：独立开关
+ *    ♦ 以字母s开头，后面接序号，如s31：RM开关
+ *    ♦ 临时变量名字，如temp：临时变量
+ *    ♦ 直接写true，或者false
+ * 
+ * 2. [变量]：变量类参数允许以下类型：
+ *    ♦ 以字母v开头，后面接序号，如v31：RM变量
+ *    ♦ 临时变量名字，如temp：临时变量
+ *    ♦ 直接写数值
+ * 
+ * 3. [序号]：序号类参数一定需要是正整数，对应相应序号
+ * 
+ * 4. [名字]：名字类参数一定需要是字符串，对应相应名字
  * 
  * 
  * 
  * @command enable
  * @text 当前事件页使用出现条件
- * @desc 当前事件页想要使用出现条件时，在事件页开头使用本指令，不想时关闭本指令，其他指令会自动失效
+ * @desc 让事件页使用自定义出现条件，要在事件页开头设置一个本指令并将参数设置为true
+ * 设置了本指令的事件页会完全使用自定义条件忽略RM原生条件，关闭则反之
+ * 设置好后，当前事件页所有带有 (用于出现条件) 的指令都会被纳入考量，不用时关闭本指令即可，无需大量删除
  * 
  * @arg enable
  * @text 是否启用
- * @desc 打开时完全不考虑RM原生的条件仅判断插件条件，关闭反之
+ * @desc 打开时，忽略RM原生条件仅判断插件条件，关闭则反之
  * @type boolean
  * @default true
  * 
@@ -34,7 +95,7 @@
  * 
  * @command condition
  * @text 条件(用于出现条件)
- * @desc 条件
+ * @desc 通过条件列表设置一组条件，每一条条件的结果会保存到一个临时变量中供后续取用
  * 
  * @arg conditions
  * @text 条件列表
@@ -43,7 +104,7 @@
  * 
  * @command condition_event
  * @text 条件(用于事件)
- * @desc 条件
+ * @desc 通过条件列表设置一组条件，每一条条件的结果会保存到一个临时变量中供后续取用
  * 
  * @arg conditions
  * @text 条件列表
@@ -54,7 +115,7 @@
  * 
  * @command variable
  * @text 变量(用于出现条件)
- * @desc 变量
+ * @desc 通过变量列表设置一组变量，每一条条件的结果会保存到一个临时变量中供后续取用
  * 
  * @arg variables
  * @text 变量列表
@@ -63,7 +124,7 @@
  * 
  * @command variable_event
  * @text 变量(用于事件)
- * @desc 变量
+ * @desc 通过变量列表设置一组变量，每一条条件的结果会保存到一个临时变量中供后续取用
  * 
  * @arg variables
  * @text 变量列表
@@ -74,7 +135,7 @@
  * 
  * @command expression
  * @text 运算(用于出现条件)
- * @desc 通过条件名字对他们进行运算
+ * @desc 对一组临时变量进行逻辑组合，输出复杂的结果保存到另一个临时变量中供后续取用
  * 
  * @arg name
  * @text 名称
@@ -93,7 +154,7 @@
  * 
  * @command expression_event
  * @text 运算(用于事件)
- * @desc 通过条件名字对他们进行运算
+ * @desc 对一组临时变量按顺序进行逻辑运算，初始值为true，输出复杂的结果保存到另一个临时变量中供后续取用
  * 
  * @arg name
  * @text 名称
@@ -114,7 +175,7 @@
  * 
  * @command log
  * @text 输出(用于出现条件)
- * @desc 输出
+ * @desc 将一个临时变量的值输出到控制台
  * 
  * @arg name
  * @text 名称
@@ -122,7 +183,7 @@
  * 
  * @command log_event
  * @text 输出(用于事件)
- * @desc 输出
+ * @desc 将一个临时变量的值输出到控制台
  * 
  * @arg name
  * @text 名称
@@ -132,23 +193,23 @@
  * 
  * @command submit
  * @text 提交结果(用于出现条件)
- * @desc 提交结果
+ * @desc 将一个临时变量作为事件页的出现条件的最终判定结果提交
  * 
  * @arg name
  * @text 名称
- * @desc 将这么一个名字的临时变量的值提交作为事件页条件判断的结果
+ * @desc 将这么一个名字的临时变量的值提交作为事件页出现条件判断的结果
  * 
  * 
  * 
  * @command clear
  * @text 清空临时变量(用于事件)
- * @desc 清空临时变量
+ * @desc 事件页内执行运算时，为保证临时变量不互相影响，在每个逻辑块的开头可以清除之前的变量
  * 
  * 
  * 
  * @command selfSwitch
  * @text 独立开关(用于事件)
- * @desc 独立开关
+ * @desc 用本指令可以设置超过D的独立开关
  * 
  * @arg type
  * @text 开关
@@ -192,11 +253,11 @@
  * 
  * @command input
  * @text 触发按键(用于触发条件)
- * @desc 触发按键
+ * @desc 在并行处理的事件页内使用，可以自定义按键来触发事件
  * 
  * @arg keyCode
  * @text 按键KeyCode
- * @desc 将事件触发条件的并行处理增加一个按键判断
+ * @desc 按键的KeyCode，可通过百度获取，如R键为82
  * @type number
  * 
  * @arg type
@@ -238,8 +299,12 @@
  * @value selfSwitch
  * @option 时间
  * @value timer
- * @option 物品/武器/防具(不包括装备着的)
+ * @option 物品
  * @value item
+ * @option 武器
+ * @value weapon
+ * @option 防具
+ * @value armor
  * @option 金币
  * @value gold
  * @option 事件朝向
@@ -253,11 +318,11 @@
  * 
  * @param checkTarget1
  * @text 比较对象1
- * @desc 变量、开关、物品、角色请写序号，独立开关用名字，脚本直接写，金币和时间不用写
+ * @desc 开关、变量、物品、武器、防具、事件朝向(玩家为0)、角色、按键用[序号]，临时变量、独立开关用[名字]，脚本直接写，金币和时间不用写
  * 
  * @param checkType
  * @text 比较类型
- * @desc 比较类型，对于开关类，只分为等于和其他两种
+ * @desc 比较类型，开关类只分为等于和其他两种，物品、武器、防具、金币、时间、事件朝向比较值，角色、按键、脚本不写
  * @type select
  * 
  * @option 等于
@@ -275,7 +340,7 @@
  * 
  * @param checkTarget2
  * @text 比较对象2
- * @desc 比较相对的另一个对象，变量和开关请写序号，独立开关用名字，时间写秒
+ * @desc 开关类写[开关]，变量类和物品、武器、防具、金币、时间写[变量]，按键写触发类型(Triggered、Repeated、其他都为Pressed)，事件朝向写方向(下、左、右、上)、角色、脚本不写
  */
 
 /*~struct~Variable:
@@ -284,14 +349,14 @@
  * @desc 运算结果会保存在这么一个名字的临时变量里以供取用
  * 
  * @param negative1
- * @text 取负数
- * @desc 对比较对象1取负数
+ * @text 运算对象1取负数
+ * @desc 对运算对象1取负数
  * @type boolean
  * @default false
  * 
  * @param checkTarget1
  * @text 运算对象1
- * @desc 
+ * @desc 写[变量]
  * 
  * @param checkType
  * @text 运算类型
@@ -316,20 +381,20 @@
  * @value min
  * 
  * @param negative2
- * @text 取负数
- * @desc 对比较对象2取负数
+ * @text 运算对象2取负数
+ * @desc 对运算对象2取负数
  * @type boolean
  * @default false
  * 
  * @param checkTarget2
  * @text 运算对象2
- * @desc 运算相对的另一个对象，变量和开关请写序号，独立开关用名字，时间写秒
+ * @desc 写[变量]
  * 
  */
 
 /*~struct~Operate:
  * @param negative1
- * @text 取反
+ * @text 当前值取反
  * @desc 对当前的值取反
  * @type boolean
  * @default false
@@ -345,48 +410,59 @@
  * @value or
  * 
  * @param negative2
- * @text 取反
+ * @text 操作对象取反
  * @desc 对操作对象的值取反
  * @type boolean
  * @default false
  * 
  * @param operateTarget
  * @text 操作对象
- * @desc 操作对象，请写条件名称
+ * @desc 写[开关]
  * 
  */
+
+// ============================================================================= //
+// 插件参数
+// ============================================================================= //
 
 var EventConditionPro = EventConditionPro || {};
 EventConditionPro.pluginName = "EventConditionPro"
 EventConditionPro.param = PluginManager.parameters(EventConditionPro.pluginName);
-
-const AppearCondition = ["condition", "variable", "expression", "log", "submit"]
-const Triggers = ["input"]
+// 出现条件
+EventConditionPro.appearCondition = ["condition", "variable", "expression", "log", "submit"]
+// 触发条件
+EventConditionPro.triggers = ["input"]
 
 // ============================================================================= //
-// 插件指令
+// 插件指令，用于事件页，this指向Game_Interpreter
 // ============================================================================= //
 
+// 条件
 PluginManager.registerCommand(EventConditionPro.pluginName, "condition_event", function (args) {
-    EventConditionPro_ProcessPluginCommand($gameMap, $gameMap, this.currentCommand())  
+    EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())  
 });
 
+// 变量
 PluginManager.registerCommand(EventConditionPro.pluginName, "variable_event", function (args) {
-    EventConditionPro_ProcessPluginCommand($gameMap, $gameMap, this.currentCommand())
+    EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
 });
 
+// 运算
 PluginManager.registerCommand(EventConditionPro.pluginName, "expression_event", function (args) {
-    EventConditionPro_ProcessPluginCommand($gameMap, $gameMap, this.currentCommand())
+    EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
 });
 
+// 输出
 PluginManager.registerCommand(EventConditionPro.pluginName, "log_event", function (args) {
-    EventConditionPro_ProcessPluginCommand($gameMap, $gameMap, this.currentCommand())
+    EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
 });
 
+// 清空
 PluginManager.registerCommand(EventConditionPro.pluginName, "clear", function (args) {
-    EventConditionPro_ClearTempValue($gameMap)
+    EventConditionPro_ClearTempValue(this)
 });
 
+// 独立开关
 PluginManager.registerCommand(EventConditionPro.pluginName, "selfSwitch", function (args) {
     const type = String(args.type);
     const value = (args.value === "true");
@@ -395,149 +471,46 @@ PluginManager.registerCommand(EventConditionPro.pluginName, "selfSwitch", functi
     $gameSelfSwitches.setValue(key, value);
 });
 
+// 用于脚本的函数，获取临时变量的值
 var EventConditionPro_GetTempValue = function (name) {
-    EventConditionPro_GetTempValue($gameMap, name)
+    return EventConditionPro_GetTempValue(this, name)
 }
 
 // ============================================================================= //
-// 插件逻辑
+// 临时变量逻辑
 // ============================================================================= //
 
 // 获取临时变量
-var EventConditionPro_GetTempValue = function (page, name) {
-    if (('EventConditionPro_TempValues' in page) && page.EventConditionPro_TempValues) {
-        if (name in page.EventConditionPro_TempValues) {
-            return page.EventConditionPro_TempValues[name]
+var EventConditionPro_GetTempValue = function (outer, name) {
+    if (('EventConditionPro_TempValues' in outer) && outer.EventConditionPro_TempValues) {
+        if (name in outer.EventConditionPro_TempValues) {
+            return outer.EventConditionPro_TempValues[name]
         }
     }
+    // 找不到返回null
     return null
 }
 
 // 创建或设置临时变量
-var EventConditionPro_AddOrSetTempValue = function (page, name, value) {
-    if (!('EventConditionPro_TempValues' in page) || !page.EventConditionPro_TempValues) {
-        page.EventConditionPro_TempValues = {}
+var EventConditionPro_AddOrSetTempValue = function (outer, name, value) {
+    if (!('EventConditionPro_TempValues' in outer) || !outer.EventConditionPro_TempValues) {
+        outer.EventConditionPro_TempValues = {}
     }
 
-    page.EventConditionPro_TempValues[name] = value
+    outer.EventConditionPro_TempValues[name] = value
 }
 
 // 清空临时变量
-var EventConditionPro_ClearTempValue = function (page) {
-    page.EventConditionPro_TempValues = {}
+var EventConditionPro_ClearTempValue = function (outer) {
+    outer.EventConditionPro_TempValues = {}
 }
 
-// 比较和运算两个值
-var EventConditionPro_Check = function (checkType, value1, value2) {
-    if (checkType === "equal") {
-        return value1 === value2;
-    }
-    else if (checkType === "notEqual") {
-        return value1 !== value2;
-    }
-    else if (checkType === "Greater") {
-        if (typeof value1 === "number") {
-            return value1 > value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "Less") {
-        if (typeof value1 === "number") {
-            return value1 < value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "GreaterEqual") {
-        if (typeof value1 === "number") {
-            return value1 >= value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "LessEqual") {
-        if (typeof value1 === "number") {
-            return value1 <= value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "add") {
-        if (typeof value1 === "number") {
-            return value1 + value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "minus") {
-        if (typeof value1 === "number") {
-            return value1 - value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "multiple") {
-        if (typeof value1 === "number") {
-            return value1 * value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "divide") {
-        if (typeof value1 === "number") {
-            return value1 / value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "mod") {
-        if (typeof value1 === "number") {
-            return value1 % value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "exponentiation") {
-        if (typeof value1 === "number") {
-            return value1 ** value2;
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "max") {
-        if (typeof value1 === "number") {
-            return Math.max(value1, value2);
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else if (checkType === "min") {
-        if (typeof value1 === "number") {
-            return Math.min(value1, value2);
-        }
-        else {
-            return value1 !== value2;
-        }
-    }
-    else {
-        console.log("未识别的检查")
-        return false
-    }
-}
+// ============================================================================= //
+// 取值逻辑
+// ============================================================================= //
 
-var EventConditionPro_GetSwitchValue = function (event, page, str) {
+// [开关]，无法识别返回false
+var EventConditionPro_GetSwitchValue = function (event, outer, str) {
     if (!str || str.length === 0) {
         console.log("错误的字符，无法识别为开关")
         return false
@@ -562,13 +535,13 @@ var EventConditionPro_GetSwitchValue = function (event, page, str) {
         const char = str.charAt(0)
         const last = str.substring(1)
         // last是数字，判断是否是开关
-        if (char === "s" && !isNaN(parseFloat(last)) && isFinite(last)) {
-            const key = Number(last);
-            return $gameSwitches.value(key)
+        if ((char === "s" || char === "S") && !isNaN(parseFloat(last)) && isFinite(last)) {
+            const index = EventConditionPro_GetIndex(last);
+            return $gameSwitches.value(index)
         }
         
         // 判断是否是临时变量
-        let re = EventConditionPro_GetTempValue(page, str)
+        let re = EventConditionPro_GetTempValue(outer, EventConditionPro_GetName(str))
         if (re !== null)
             return re
 
@@ -582,11 +555,12 @@ var EventConditionPro_GetSwitchValue = function (event, page, str) {
         }
     }
 
-    console.log("无法识别的开关")
+    console.log("无法识别的开关：" + str)
     return false
 }
 
-var EventConditionPro_GetVariableValue = function (event, page, str) {
+// [变量]，无法识别返回-1
+var EventConditionPro_GetVariableValue = function (event, outer, str) {
     if (!str || str.length === 0) {
         console.log("错误的字符，无法识别为变量")
         return -1
@@ -596,14 +570,14 @@ var EventConditionPro_GetVariableValue = function (event, page, str) {
         const char = str.charAt(0)
         const last = str.substring(1)
         // last是数字，判断是否是变量
-        if (char === "v" && !isNaN(parseFloat(last)) && isFinite(last)) {
-            const key = Number(last);
-            return $gameVariables.value(key)
+        if ((char === "v" || char === "V") && !isNaN(parseFloat(last)) && isFinite(last)) {
+            const index = EventConditionPro_GetIndex(last);
+            return $gameVariables.value(index)
         }
     }
 
     // 判断是否是临时变量
-    let re = EventConditionPro_GetTempValue(page, str)
+    let re = EventConditionPro_GetTempValue(outer, EventConditionPro_GetName(str))
     if (re !== null)
         return re
 
@@ -612,8 +586,146 @@ var EventConditionPro_GetVariableValue = function (event, page, str) {
         return Number(str)
     }
 
-    console.log("无法识别的变量")
+    console.log("无法识别的变量：" + str)
     return -1
+}
+
+// [序号]
+var EventConditionPro_GetIndex = function (index) {
+    return Number(index)
+}
+
+// [名字]
+var EventConditionPro_GetName = function (name) {
+    return String(name)
+}
+
+// ============================================================================= //
+// 比较和运算逻辑
+// ============================================================================= //
+
+// 比较和运算两个值
+var EventConditionPro_Check = function (checkType, value1, value2) {
+    // 等于
+    if (checkType === "equal") {
+        return value1 === value2;
+    }
+    // 不等于
+    else if (checkType === "notEqual") {
+        return value1 !== value2;
+    }
+    // 大于
+    else if (checkType === "Greater") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 > value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 小于
+    else if (checkType === "Less") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 < value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 大于等于
+    else if (checkType === "GreaterEqual") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 >= value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 小于等于
+    else if (checkType === "LessEqual") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 <= value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 加
+    else if (checkType === "add") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 + value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 减
+    else if (checkType === "minus") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 - value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 乘
+    else if (checkType === "multiple") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 * value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 除
+    else if (checkType === "divide") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 / value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 膜
+    else if (checkType === "mod") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 % value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 取幂
+    else if (checkType === "exponentiation") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return value1 ** value2;
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 取大
+    else if (checkType === "max") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return Math.max(value1, value2);
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    // 取小
+    else if (checkType === "min") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return Math.min(value1, value2);
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
+    else {
+        console.log("未识别的检查：" + String(value1) + ", " + String(value2))
+        return null
+    }
 }
 
 // 处理条件逻辑
@@ -625,47 +737,54 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
 
     const commandName = eventItem.parameters[1]
     const args = eventItem.parameters[3]
+    // 当前事件页使用出现条件
     if (commandName === "enable") {
         return args.enable === "true"
     }
+    // 条件
     else if (commandName === "condition") {
         const conditions = JsonEx.parse(args.conditions);
         for (let i = 0; i < conditions.length; i++) {
             const condition = JsonEx.parse(conditions[i])
 
-            const resultName = String(condition.name);
+            const resultName = EventConditionPro_GetName(condition.name);
             const negative = (condition.negative === "true")
             const type = String(condition.type);
             const checkType = String(condition.checkType);
 
+            // 临时变量
             if (type === "tempVariable") {
-                const value1 = EventConditionPro_GetTempValue(page, condition.checkTarget1)
+                const value1 = EventConditionPro_GetTempValue(page, EventConditionPro_GetName(condition.checkTarget1))
                 const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            // 开关
             else if (type === "switch") {
-                const checkTarget1 = Number(condition.checkTarget1);
+                const checkTarget1 = EventConditionPro_GetIndex(condition.checkTarget1);
                 const value1 = $gameSwitches.value(checkTarget1)
                 const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            // 变量
             else if (type === "variable") {
-                const checkTarget1 = Number(condition.checkTarget1);
+                const checkTarget1 = EventConditionPro_GetIndex(condition.checkTarget1);
                 const value1 = $gameVariables.value(checkTarget1)
                 const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            // 独立开关
             else if (type === "selfSwitch") {
-                const checkTarget1 = String(condition.checkTarget1);
+                const checkTarget1 = EventConditionPro_GetName(condition.checkTarget1);
                 const key1 = [event._mapId, event._eventId, checkTarget1.toUpperCase()];
                 const value1 = $gameSelfSwitches.value(key1)
                 const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            // 时间
             else if (type === "timer") {
                 if ($gameTimer.isWorking()) {
                     const value1 = $gameTimer.frames() / 60;
@@ -674,8 +793,9 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                     EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
                 }
             }
+            // 物品
             else if (type === "item") {
-                const checkTarget1 = Number(condition.checkTarget1);
+                const checkTarget1 = EventConditionPro_GetIndex(condition.checkTarget1);
                 if (checkTarget1 >= 0 && checkTarget1 < $dataItems.length) {
                     const item = $dataItems[checkTarget1];
                     const value1 = $gameParty.numItems(item)
@@ -684,44 +804,91 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                     EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
                 }
             }
+            // 武器
+            else if (type === "weapon") {
+                const checkTarget1 = EventConditionPro_GetIndex(condition.checkTarget1);
+                if (checkTarget1 >= 0 && checkTarget1 < $dataWeapons.length) {
+                    const item = $dataWeapons[checkTarget1];
+                    const value1 = $gameParty.numItems(item)
+                    const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
+                    const re = EventConditionPro_Check(checkType, value1, value2)
+                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                }
+            }
+            // 防具
+            else if (type === "armor") {
+                const checkTarget1 = EventConditionPro_GetIndex(condition.checkTarget1);
+                if (checkTarget1 >= 0 && checkTarget1 < $dataArmors.length) {
+                    const item = $dataArmors[checkTarget1];
+                    const value1 = $gameParty.numItems(item)
+                    const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
+                    const re = EventConditionPro_Check(checkType, value1, value2)
+                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                }
+            }
+            // 金币
             else if (type === "gold") {
                 const value1 = $gameParty.gold()
                 const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            // 角色
             else if (type === "actor") {
-                const checkTarget1 = Number(condition.checkTarget1);
+                const checkTarget1 = EventConditionPro_GetIndex(condition.checkTarget1);
                 const actor = $gameActors.actor(checkTarget1);
                 const re = $gameParty.members().includes(actor)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            // 事件朝向
             else if (type === "direction") {
-                const checkTarget1 = Number(condition.checkTarget1);
-                const checkTarget2 = Number(condition.checkTarget2);
+                const checkTarget1 = EventConditionPro_GetIndex(condition.checkTarget1);
+                const checkTarget2 = String(condition.checkTarget2);
                 let character = this.character(checkTarget1);
                 if (character) {
-                    const re = (character.direction() === checkTarget2);
+                    let direction = 0
+                    if (checkTarget2 === "下") {
+                        direction = 2
+                    }
+                    else if (checkTarget2 === "左") {
+                        direction = 4
+                    }
+                    else if (checkTarget2 === "右") {
+                        direction = 6
+                    }
+                    else if (checkTarget2 === "上") {
+                        direction = 8
+                    }
+                    const re = (character.direction() === direction);
                     EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
                 }
             }
+            // 按键
             else if (type === "input") {
                 const keyCode = Number(condition.checkTarget1);
+                let keyName = String(keyCode)
+                // 不存在此按键则新增
                 if (!(keyCode in Input.keyMapper)) {
-                    Input.keyMapper[keyCode] = String(keyCode);
+                    Input.keyMapper[keyCode] = keyName;
                 }
+                // 存在按键则获取名字
+                else {
+                    keyName = Input.keyMapper[keyCode]
+                }
+                // 触发类型
                 let re = false;
-                if (type === "Triggered") {
-                    re = Input.isTriggered(String(keyCode))
+                if (checkType === "Triggered") {
+                    re = Input.isTriggered(keyName)
                 }
-                else if (type === "Repeated") {
-                    re = Input.isRepeated(String(keyCode))
+                else if (checkType === "Repeated") {
+                    re = Input.isRepeated(keyName)
                 }
                 else {
-                    re = Input.isPressed(String(keyCode))
+                    re = Input.isPressed(keyName)
                 }
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
             }
+            // 脚本
             else if (type === "script") {
                 const re = !!eval(condition.checkTarget1)
                 EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
@@ -730,12 +897,13 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
 
         return true
     }
+    // 变量
     else if (commandName === "variable") {
         const variables = JsonEx.parse(args.variables);
         for (let i = 0; i < variables.length; i++) {
             const variable = JsonEx.parse(variables[i])
 
-            const resultName = String(variable.name);
+            const resultName = EventConditionPro_GetName(variable.name);
             const negative1 = (variable.negative1 === "true")
             const negative2 = (variable.negative2 === "true")
             const checkType = String(variable.checkType);
@@ -748,11 +916,13 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
 
         return true
     }
+    // 运算
     else if (commandName === "expression") {
-        const resultName = String(args.name);
+        const resultName = EventConditionPro_GetName(args.name);
         const negative = (args.negative === "true")
         const operates = JsonEx.parse(args.operates);
 
+        // 初始值为true
         let result = true
         for (let i = 0; i < operates.length; i++) {
             const operate = JsonEx.parse(operates[i])
@@ -760,14 +930,15 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
             const negative1 = (operate.negative1 === "true")
             const negative2 = (operate.negative2 === "true")
             const type = String(operate.type)
-            const operateTarget = String(operate.operateTarget)
+            // [开关]
+            const operateTarget = EventConditionPro_GetSwitchValue(operate.operateTarget)
 
+            // 对当前的值取反
             if (negative1) {
                 result = !result
             }
-
-            let re = EventConditionPro_GetTempValue(page, operateTarget)
-            re = (negative2 ? !re : re)
+            // 操作对象取反
+            const re = (negative2 ? !operateTarget : operateTarget)
             if (type === "and") {
                 result = (result && re)
             }
@@ -779,39 +950,51 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
 
         return true
     }
-    else if (commandName === "submit") {
-        const name = String(args.name);
-        return EventConditionPro_GetTempValue(page, name)
-    }
+    // 输出
     else if (commandName === "log") {
-        const name = String(args.name);
+        const name = EventConditionPro_GetName(args.name);
         console.log(name + "：" + EventConditionPro_GetTempValue(page, name))
         return true
     }
+    // 提交结果
+    else if (commandName === "submit") {
+        const name = EventConditionPro_GetName(args.name);
+        return EventConditionPro_GetTempValue(page, name)
+    }
+    // 触发按键
     else if (commandName === "input") {
-        const keyCode = Number(args.keyCode);
         const type = String(args.type);
-
+        const keyCode = Number(args.keyCode);
+        let keyName = String(keyCode)
+        // 不存在此按键则新增
         if (!(keyCode in Input.keyMapper)) {
-            Input.keyMapper[keyCode] = String(keyCode);
+            Input.keyMapper[keyCode] = keyName;
         }
-
+        // 存在按键则获取名字
+        else {
+            keyName = Input.keyMapper[keyCode]
+        }
+        // 触发类型
         if (type === "Pressed") {
-            return Input.isPressed(String(keyCode))
+            return Input.isPressed(keyName)
         }
         else if (type === "Triggered") {
-            return Input.isTriggered(String(keyCode))
+            return Input.isTriggered(keyName)
         }
         else if (type === "Repeated") {
-            return Input.isRepeated(String(keyCode))
+            return Input.isRepeated(keyName)
         }
 
         return false
     }
 
-    console.log("未识别的指令，跳过")
+    console.log("未识别的指令，跳过：" + commandName)
     return null
 }
+
+// ============================================================================= //
+// 指令操作
+// ============================================================================= //
 
 // 获取所有的条件指令
 var EventConditionPro_GetConditions = function (page) {
@@ -824,18 +1007,22 @@ var EventConditionPro_GetConditions = function (page) {
 
 // 处理条件逻辑
 var EventConditionPro_ProcessConditions = function (event, page, conditions) {
+    // 按顺序逐条处理
     for (let index = 0; index < conditions.length; ++index) {
         let re = EventConditionPro_ProcessPluginCommand(event, page, conditions[index])
         const commandName = conditions[index].parameters[1]
+        // submit提交结果
         if (commandName === "submit") {
             EventConditionPro_ClearTempValue(page)
             return re
         }
+        // 出现false意味着需要跳过
         else if (!re) {
             continue;
         }
     }
 
+    // 没发现submit
     EventConditionPro_ClearTempValue(page)
     return false
 }
@@ -875,15 +1062,18 @@ var EventConditionPro_Load = function (event, page) {
                         page.EventConditionPro_Contions.push(page.list[index])
                     }
                 }
-                else if (Triggers.includes(pluginCommand)) {
+                // 是触发条件
+                else if (EventConditionPro.triggers.includes(pluginCommand)) {
                     page.EventConditionPro_Triggers.push(page.list[index])
                 }
-                else if (AppearCondition.includes(pluginCommand)){
+                // 是出现条件
+                else if (EventConditionPro.appearCondition.includes(pluginCommand)){
                     page.EventConditionPro_Contions.push(page.list[index])
                 }
             }
         }
     }
+    // 并未启用
     if (!Enable) {
         page.EventConditionPro_Contions = []
         return page;
@@ -943,11 +1133,11 @@ DataManager.onLoad = function (object) {
     EventConditionPro_DataManager_onLoad.call(this, object);
 
     if (EventConditionPro_loadDataMap) {
-        // 对用于数据的事件全部进行注释处理
         for (let i = $dataMap.events.length - 1; i >= 0; --i) {
             if (!$dataMap.events[i])
                 continue;
 
+            // 对事件页所有的插件指令进行处理
             for (let j = $dataMap.events[i].pages.length - 1; j >= 0; --j) {
                 EventConditionPro_Load($dataMap.events[i], $dataMap.events[i].pages[j]);
             }
@@ -972,8 +1162,8 @@ Game_Event.prototype.setupPageSettings = function () {
 
     this.canParallel = true
 
-    const Triggers = EventConditionPro_GetTriggers(page)
-    if (Triggers && Triggers.length > 0 && this._trigger === 4) {
+    const EventConditionPro.triggers = EventConditionPro_GetTriggers(page)
+    if (EventConditionPro.triggers && EventConditionPro.triggers.length > 0 && this._trigger === 4) {
         // 暂时停止并行处理的自动触发
         this.canParallel = false
     }
@@ -985,11 +1175,11 @@ Game_Event.prototype.updateParallel = function () {
     // 判断并行处理的自动触发
     if (this._trigger === 4 && !this.canParallel) {
         const page = this.page();
-        const Triggers = EventConditionPro_GetTriggers(page)
-        if (Triggers && Triggers.length > 0) {
+        const EventConditionPro.triggers = EventConditionPro_GetTriggers(page)
+        if (EventConditionPro.triggers && EventConditionPro.triggers.length > 0) {
             let Check = true
-            for (let i = 0; i < Triggers.length; ++i) {
-                if (!EventConditionPro_ProcessPluginCommand(this, page, Triggers[i])) {
+            for (let i = 0; i < EventConditionPro.triggers.length; ++i) {
+                if (!EventConditionPro_ProcessPluginCommand(this, page, EventConditionPro.triggers[i])) {
                     Check = false
                     break
                 }
@@ -1007,8 +1197,8 @@ Game_Event.prototype.updateParallel = function () {
     // 判断并行处理的自动停止
     if (this._trigger === 4 && this.canParallel) {
         const page = this.page();
-        const Triggers = EventConditionPro_GetTriggers(page)
-        if (Triggers && Triggers.length > 0) {
+        const EventConditionPro.triggers = EventConditionPro_GetTriggers(page)
+        if (EventConditionPro.triggers && EventConditionPro.triggers.length > 0) {
             if (!this._interpreter.isRunning()) {
                 this.canParallel = false
             }
