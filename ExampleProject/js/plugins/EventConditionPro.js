@@ -139,16 +139,6 @@
  * @text 运算(用于出现条件)
  * @desc 对一组临时变量进行逻辑组合，输出复杂的结果保存到另一个临时变量中供后续取用
  * 
- * @arg name
- * @text 名称
- * @desc 本运算的结果会保存在这么一个名字的临时变量里以供取用
- * 
- * @arg negative
- * @text 取反
- * @desc 对当前运算的结果取反
- * @type boolean
- * @default false
- * 
  * @arg operates
  * @text 操作列表
  * @type struct<Operate>[]
@@ -157,16 +147,6 @@
  * @command expression_event
  * @text 运算(用于事件)
  * @desc 对一组临时变量按顺序进行逻辑运算，输出复杂的结果保存到另一个临时变量中供后续取用
- * 
- * @arg name
- * @text 名称
- * @desc 本运算的结果会保存在这么一个名字的临时变量里以供取用
- * 
- * @arg negative
- * @text 取反
- * @desc 对当前运算的结果取反
- * @type boolean
- * @default false
  * 
  * @arg operates
  * @text 操作列表
@@ -377,7 +357,7 @@
  * 
  * @param checkTarget1
  * @text 运算对象1
- * @desc 写[变量]
+ * @desc 写[变量]，随机数是较小值，脚本直接写
  * 
  * @param checkType
  * @text 运算类型
@@ -401,6 +381,10 @@
  * @value max
  * @option 取小
  * @value min
+ * @option 随机数
+ * @value random
+ * @option 脚本
+ * @value script
  * 
  * @param negative2
  * @text 运算对象2取负数
@@ -410,18 +394,26 @@
  * 
  * @param checkTarget2
  * @text 运算对象2
- * @desc 写[变量]
+ * @desc 写[变量]，随机数是较大值，脚本不写
  * 
  */
 
 /*~struct~Operate:
+ * @param name
+ * @text 名称
+ * @desc 运算结果会保存在这么一个名字的临时变量里以供取用
+ * 
  * @param negative1
- * @text 当前值取反
- * @desc 对当前的值取反
+ * @text 运算对象1取反
+ * @desc 对运算对象1取反
  * @type boolean
  * @default false
  * 
- * @param type
+ * @param checkTarget1
+ * @text 运算对象1
+ * @desc 写[开关]
+ * 
+ * @param checkType
  * @text 操作类型
  * @desc 操作类型
  * @type select
@@ -433,13 +425,13 @@
  * @value or
  * 
  * @param negative2
- * @text 操作对象取反
- * @desc 对操作对象的值取反
+ * @text 运算对象2取反
+ * @desc 对运算对象2取反
  * @type boolean
  * @default false
  * 
- * @param operateTarget
- * @text 操作对象
+ * @param checkTarget2
+ * @text 运算对象2
  * @desc 写[开关]
  * 
  */
@@ -532,13 +524,14 @@ var EventConditionPro_GetTempValue = function (outer, name) {
 // 创建或设置临时变量
 var EventConditionPro_AddOrSetTempValue = function (outer, name, value) {
     if (!outer)
-        return
+        return false
 
     if (!('EventConditionPro_TempValues' in outer) || !outer.EventConditionPro_TempValues) {
         outer.EventConditionPro_TempValues = {}
     }
 
     outer.EventConditionPro_TempValues[name] = value
+    return true
 }
 
 // 清空临时变量
@@ -603,6 +596,50 @@ var EventConditionPro_GetSwitchValue = function (event, outer, str) {
     return false
 }
 
+// [开关]，无法识别返回false
+var EventConditionPro_SetSwitchValue = function (event, outer, str, value) {
+    if (!str || str.length === 0) {
+        console.log($dataMap.events[event._eventId].name + " " + "错误的字符，无法识别为开关")
+        return false
+    }
+
+    // 只有单个字符，判断是否是独立开关
+    if (str.length === 1) {
+        const charIndex = str.charCodeAt(0)
+        // 大写A-Z
+        if (charIndex >= 65 && charIndex <= 90) {
+            const key = [event._mapId, event._eventId, str];
+            $gameSelfSwitches.setValue(key, value);
+            return true
+        }
+        // 小写a-z
+        else if (charIndex >= 97 && charIndex <= 122) {
+            str = str.toUpperCase()
+            const key = [event._mapId, event._eventId, str];
+            $gameSelfSwitches.setValue(key, value);
+            return true
+        }
+    }
+    else {
+        const char = str.charAt(0)
+        const last = str.substring(1)
+        const num = EventConditionPro_GetIndex(last)
+        // last是数字，判断是否是开关
+        if ((char === "s" || char === "S") && !isNaN(num) && isFinite(num)) {
+            $gameSwitches.setValue(num, value)
+            return true
+        }
+
+        // 判断是否是临时变量
+        let re = EventConditionPro_AddOrSetTempValue(outer, EventConditionPro_GetName(str), value)
+        if (re)
+            return re
+    }
+
+    console.log($dataMap.events[event._eventId].name + " " + "无法识别的开关：" + str)
+    return false
+}
+
 // [变量]，无法识别返回-1
 var EventConditionPro_GetVariableValue = function (event, outer, str) {
     if (!str || str.length === 0) {
@@ -635,6 +672,33 @@ var EventConditionPro_GetVariableValue = function (event, outer, str) {
     return -1
 }
 
+// [变量]，无法识别返回false
+var EventConditionPro_SetVariableValue = function (event, outer, str, value) {
+    if (!str || str.length === 0) {
+        console.log($dataMap.events[event._eventId].name + " " + "错误的字符，无法识别为变量")
+        return false
+    }
+
+    if (str.length > 1) {
+        const char = str.charAt(0)
+        const last = str.substring(1)
+        const num = EventConditionPro_GetIndex(last)
+        // last是数字，判断是否是变量
+        if ((char === "v" || char === "V") && !isNaN(num) && isFinite(num)) {
+            $gameVariables.setValue(num, value);
+            return true
+        }
+    }
+
+    // 判断是否是临时变量
+    let re = EventConditionPro_AddOrSetTempValue(outer, EventConditionPro_GetName(str), value)
+    if (re)
+        return re
+
+    console.log($dataMap.events[event._eventId].name + " " + "无法识别的变量：" + str)
+    return false
+}
+
 // [序号]
 var EventConditionPro_GetIndex = function (index) {
     return Number(index)
@@ -658,6 +722,24 @@ var EventConditionPro_Check = function (checkType, value1, value2) {
     // 不等于
     else if (checkType === "notEqual") {
         return value1 !== value2;
+    }
+    // 与
+    else if (checkType === "and") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return false;
+        }
+        else {
+            return value1 && value2;
+        }
+    }
+    // 或
+    else if (checkType === "or") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            return false;
+        }
+        else {
+            return value1 || value2;
+        }
     }
     // 大于
     else if (checkType === "Greater") {
@@ -767,6 +849,17 @@ var EventConditionPro_Check = function (checkType, value1, value2) {
             return value1 !== value2;
         }
     }
+    // 随机数
+    else if (checkType === "random") {
+        if (typeof value1 === "number" && typeof value2 === "number") {
+            randomMax = value2 - value1 + 1;
+            randomMax = Math.max(randomMax, 1);
+            return value1 + Math.randomInt(randomMax);
+        }
+        else {
+            return value1 !== value2;
+        }
+    }
     else {
         console.log("未识别的检查：" + String(value1) + ", " + String(value2))
         return null
@@ -804,10 +897,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
                 if (checkTarget1Name.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                    EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                 }
             }
             // 临时变量(变量)
@@ -816,10 +909,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
                 if (checkTarget1Name.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                    EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                 }
             }
             // 开关
@@ -829,10 +922,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
                 if (checkTarget1Name.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                    EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                 }
             }
             // 变量
@@ -842,10 +935,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
                 if (checkTarget1Name.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                    EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                 }
             }
             // 独立开关
@@ -856,10 +949,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const value2 = EventConditionPro_GetSwitchValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
                 if (checkTarget1Name.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                    EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                 }
             }
             // 时间
@@ -869,10 +962,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                     const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                     const re = EventConditionPro_Check(checkType, value1, value2)
                     if (resultName.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                        EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                     }
                     if (checkTarget1Name.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                        EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                     }
                 }
             }
@@ -885,10 +978,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                     const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                     const re = EventConditionPro_Check(checkType, value1, value2)
                     if (resultName.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                        EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                     }
                     if (checkTarget1Name.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                        EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                     }
                 }
             }
@@ -901,10 +994,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                     const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                     const re = EventConditionPro_Check(checkType, value1, value2)
                     if (resultName.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                        EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                     }
                     if (checkTarget1Name.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                        EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                     }
                 }
             }
@@ -917,10 +1010,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                     const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                     const re = EventConditionPro_Check(checkType, value1, value2)
                     if (resultName.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                        EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                     }
                     if (checkTarget1Name.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                        EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                     }
                 }
             }
@@ -930,10 +1023,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const value2 = EventConditionPro_GetVariableValue(event, page, condition.checkTarget2)
                 const re = EventConditionPro_Check(checkType, value1, value2)
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
                 if (checkTarget1Name.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, value1)
+                    EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, value1)
                 }
             }
             // 角色
@@ -942,7 +1035,7 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 const actor = $gameActors.actor(checkTarget1);
                 const re = $gameParty.members().includes(actor)
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
             }
             // 事件朝向
@@ -973,10 +1066,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                     }
                     const re = EventConditionPro_Check(checkType, character.direction(), direction)
                     if (resultName.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                        EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                     }
                     if (checkTarget1Name.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, character.direction())
+                        EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, character.direction())
                     }
                 }
             }
@@ -995,10 +1088,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 if (character) {
                     const re = EventConditionPro_Check(checkType, character.x, value)
                     if (resultName.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                        EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                     }
                     if (checkTarget1Name.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, character.x)
+                        EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, character.x)
                     }
                 }
             }
@@ -1017,10 +1110,10 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                 if (character) {
                     const re = EventConditionPro_Check(checkType, character.y, value)
                     if (resultName.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                        EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                     }
                     if (checkTarget1Name.length > 0) {
-                        EventConditionPro_AddOrSetTempValue(page, checkTarget1Name, character.y)
+                        EventConditionPro_SetSwitchValue(event, page, checkTarget1Name, character.y)
                     }
                 }
             }
@@ -1048,14 +1141,14 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
                     re = Input.isPressed(keyName)
                 }
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
             }
             // 脚本
             else if (type === "script") {
                 const re = !!eval(condition.checkTarget1)
                 if (resultName.length > 0) {
-                    EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !re : re))
+                    EventConditionPro_SetSwitchValue(event, page, resultName, (negative ? !re : re))
                 }
             }
         }
@@ -1073,48 +1166,37 @@ var EventConditionPro_ProcessPluginCommand = function (event, page, eventItem) {
             const negative2 = (variable.negative2 === "true")
             const checkType = String(variable.checkType);
 
-            const value1 = EventConditionPro_GetVariableValue(event, page, variable.checkTarget1)
-            const value2 = EventConditionPro_GetVariableValue(event, page, variable.checkTarget2)
-            const re = EventConditionPro_Check(checkType, (negative1 ? -1 : 1) * value1, (negative2 ? -1 : 1) * value2)
-            EventConditionPro_AddOrSetTempValue(page, resultName, re)
+            // 脚本
+            if (checkType === "script") {
+                const re = !!eval(variable.checkTarget1)
+                EventConditionPro_SetVariableValue(event, page, resultName, (negative1 ? -1 : 1) * re)
+            }
+            else {
+                const value1 = EventConditionPro_GetVariableValue(event, page, variable.checkTarget1)
+                const value2 = EventConditionPro_GetVariableValue(event, page, variable.checkTarget2)
+                const re = EventConditionPro_Check(checkType, (negative1 ? -1 : 1) * value1, (negative2 ? -1 : 1) * value2)
+                EventConditionPro_SetVariableValue(event, page, resultName, re)
+            }
         }
 
         return true
     }
-    // 运算
+        // 运算
     else if (commandName === "expression" || commandName === "expression_event") {
-        const resultName = EventConditionPro_GetName(args.name);
-        const negative = (args.negative === "true")
         const operates = JsonEx.parse(args.operates);
-
-        let result = false
         for (let i = 0; i < operates.length; i++) {
             const operate = JsonEx.parse(operates[i])
 
+            const resultName = EventConditionPro_GetName(operate.name);
             const negative1 = (operate.negative1 === "true")
             const negative2 = (operate.negative2 === "true")
-            const type = String(operate.type)
-            // [开关]
-            const operateTarget = EventConditionPro_GetSwitchValue(event, page, operate.operateTarget)
+            const checkType = String(operate.checkType);
 
-            // 对当前的值取反
-            if (negative1) {
-                result = !result
-            }
-            // 操作对象取反
-            const re = (negative2 ? !operateTarget : operateTarget)
-            // 第一个直接赋值给result
-            if (i === 0) {
-                result = re
-            }
-            else if (type === "and") {
-                result = (result && re)
-            }
-            else if (type === "or") {
-                result = (result || re)
-            }
+            const value1 = EventConditionPro_GetSwitchValue(event, page, variable.checkTarget1)
+            const value2 = EventConditionPro_GetSwitchValue(event, page, variable.checkTarget2)
+            const re = EventConditionPro_Check(checkType, (negative1 ? !value1 : value1), (negative2 ? !value2 : value2))
+            EventConditionPro_SetSwitchValue(event, page, resultName, re)
         }
-        EventConditionPro_AddOrSetTempValue(page, resultName, (negative ? !result : result))
 
         return true
     }
