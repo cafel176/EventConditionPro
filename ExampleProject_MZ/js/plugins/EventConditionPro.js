@@ -51,12 +51,16 @@
  * 
  * 
  * ★ 插件指令：
+ * MV：逻辑增强 类型 指令内容
+ * 两用的指令，后缀为 _出现 的用于事件出现条件，后缀为 _事件 的用于事件页内
  * 
- * 1. 当前事件页使用出现条件：让事件页使用自定义出现条件，要在事件页开头设置一个本指令并将参数设置为true
+ * 1. 出现条件启用(出现)：让事件页使用自定义出现条件，要在事件页开头设置一个本指令并将参数设置为true
  *    设置了本指令的事件页会完全使用自定义条件忽略RM原生条件，关闭则反之
  *    设置好后，当前事件页所有带有 (用于出现条件) 的指令都会被纳入考量，不用时关闭本指令即可，无需大量删除
+ *    ♦ 启用：true/false
+ *    ♦ 示例：逻辑增强 出现条件启用 true
  * 
- * 2. 条件(用于出现条件)：通过条件列表设置一组[开关]，每一条的结果支持保存供后续取用
+ * 2. 条件(两用)：通过条件列表设置一组[开关]，每一条的结果支持保存供后续取用
  *    ♦ 结果：写[开关]，比较结果会保存在这里，留空为不保存
  *    ♦ 取反：对当前条件的结果取反
  *    ♦ 条件类型
@@ -65,9 +69,7 @@
  *    ♦ 比较类型：开关类只分为等于和其他两种，物品、武器、防具、金币、时间、事件朝向比较值，角色、按键、脚本不写
  *    ♦ 比较对象2：开关类写[开关]，变量类和物品、武器、防具、金币、时间、事件位置写[变量]，按键写触发类型(Triggered、Repeated、其他都为Pressed)，事件朝向写方向(下、左、右、上)、角色、脚本不写
  * 
- * 3. 条件(用于事件)：功能同上，但是用于事件页内
- * 
- * 4. 变量(用于出现条件)：通过变量列表设置一组[变量]，每一条的结果支持保存供后续取用
+ * 3. 变量(两用)：通过变量列表设置一组[变量]，每一条的结果支持保存供后续取用
  *    ♦ 结果：写[变量]，运算结果会保存在这里
  *    ♦ 运算对象1取负数
  *    ♦ 运算对象1：写[变量]，随机数是较小值，脚本直接写
@@ -75,9 +77,7 @@
  *    ♦ 运算对象2取负数
  *    ♦ 运算对象2：写[变量]，随机数是较大值，脚本不写
  * 
- * 5. 变量(用于事件)：功能同上，但是用于事件页内
- * 
- * 6. 运算(用于出现条件)：对一组[开关]进行逻辑组合，每一条的结果支持保存供后续取用
+ * 4. 运算(两用)：对一组[开关]进行逻辑组合，每一条的结果支持保存供后续取用
  *    ♦ 结果：写[开关]，运算结果会保存在这里
  *    ♦ 运算对象1取反
  *    ♦ 运算对象1：写[开关]
@@ -85,26 +85,50 @@
  *    ♦ 运算对象2取反
  *    ♦ 运算对象2：写[开关]
  * 
- * 7. 运算(用于事件)：功能同上，但是用于事件页内
+ * 5. 输出(两用)：将一个临时变量的值输出到控制台
+ *    ♦ 名称
+ *    ♦ 示例：逻辑增强 输出_出现 temp
+ *    ♦ 示例：逻辑增强 输出_事件 temp
  * 
- * 8. 输出(用于出现条件)：将一个临时变量的值输出到控制台
+ * 6. 提交(两用)：将一个临时变量作为事件页的出现条件的最终判定结果提交
+ *    ♦ 名称
+ *    ♦ 示例：逻辑增强 提交_出现 temp
+ *    ♦ 示例：逻辑增强 提交_事件 temp
+ *  
+ * 7. 清空临时变量(事件)：事件页内执行运算时，为保证临时变量不互相影响，可用本指令清除之前的变量
+ *    ♦ 示例：逻辑增强 清空临时变量
  * 
- * 9. 输出(用于事件)：功能同上，但是用于事件页内
+ * 8. 独立开关(事件)：用本指令可以设置超过D的独立开关
+ *    ♦ 名称
+ *    ♦ 开启：true/false
+ *    ♦ 示例：逻辑增强 独立开关 E true
+ *   
+ * 9. 触发按键(触发)：在并行处理的事件页内使用，可以自定义按键来触发事件
+ *    ♦ 按键：填写KeyCode，可通过百度得到，如R为82
+ *    ♦ 示例：逻辑增强 触发按键 82
+ *  
+ * @param condition
+ * @text 条件转换
+ * @desc MV版本下，可以在这里编辑之后粘贴到插件指令里
+ * @type struct<Condition>[]
+ * @default []
  * 
- * 10. 提交结果(用于出现条件)：将一个临时变量作为事件页的出现条件的最终判定结果提交
+ * @param variable
+ * @text 变量转换
+ * @desc MV版本下，可以在这里编辑之后粘贴到插件指令里
+ * @type struct<Variable>[]
+ * @default []
  * 
- * 11. 提交结果(用于事件)：功能同上，但是用于事件页内
- * 
- * 12. 清空临时变量(用于事件)：事件页内执行运算时，为保证临时变量不互相影响，可用本指令清除之前的变量
- * 
- * 13. 独立开关(用于事件)：用本指令可以设置超过D的独立开关
- * 
- * 14. 触发按键(用于触发条件)：在并行处理的事件页内使用，可以自定义按键来触发事件
+ * @param expression
+ * @text 运算转换
+ * @desc MV版本下，可以在这里编辑之后粘贴到插件指令里
+ * @type struct<Operate>[]
+ * @default []
  * 
  * 
  * 
  * @command enable
- * @text 当前事件页使用出现条件
+ * @text 出现条件启用
  * @desc 让事件页使用自定义出现条件，要在事件页开头设置一个本指令并将参数设置为true
  * 设置了本指令的事件页会完全使用自定义条件忽略RM原生条件，关闭则反之
  * 设置好后，当前事件页所有带有 (用于出现条件) 的指令都会被纳入考量，不用时关闭本指令即可，无需大量删除
@@ -196,7 +220,7 @@
  * 
  * 
  * @command submit
- * @text 提交结果(用于出现条件)
+ * @text 提交(用于出现条件)
  * @desc 将一个临时变量作为事件页的出现条件的最终判定结果提交
  * 
  * @arg name
@@ -204,7 +228,7 @@
  * @desc 将这么一个名字的临时变量的值提交作为事件页出现条件判断的结果
  * 
  * @command submit_event
- * @text 提交结果(用于事件)
+ * @text 提交(用于事件)
  * @desc 将一个临时变量作为条件的最终判定结果提交
  * 
  * @arg name
@@ -477,48 +501,105 @@ EventConditionPro.triggers = ["input"]
 // 保存上一次运算的结果
 var EventConditionPro_LastResult = null
 
-// 条件
-PluginManager.registerCommand(EventConditionPro.pluginName, "condition_event", function (args) {
-    EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
-});
+if (Utils.RPGMAKER_NAME === 'MV') {
+    var EventConditionPro_Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function (command, args) {
+        EventConditionPro_Game_Interpreter_pluginCommand.call(this, command, args);
+        if (command === "逻辑增强") {
+            if (args[0] === "出现条件启用" && args.length === 2) {
+                EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+                return;
+            }
 
-// 变量
-PluginManager.registerCommand(EventConditionPro.pluginName, "variable_event", function (args) {
-    EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
-});
+            if (args[0] === "条件_事件" && args.length === 2) {
+                EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+                return;
+            }
 
-// 运算
-PluginManager.registerCommand(EventConditionPro.pluginName, "expression_event", function (args) {
-    EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
-});
+            if (args[0] === "变量_事件" && args.length === 2) {
+                EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+                return;
+            }
 
-// 输出
-PluginManager.registerCommand(EventConditionPro.pluginName, "log_event", function (args) {
-    EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
-});
+            if (args[0] === "运算_事件" && args.length === 2) {
+                EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+                return;
+            }
 
-// 提交
-PluginManager.registerCommand(EventConditionPro.pluginName, "submit_event", function (args) {
-    EventConditionPro_LastResult = EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
-    // 清除临时变量
-    EventConditionPro_ClearTempValue(this)
-});
+            if (args[0] === "输出_事件" && args.length === 2) {
+                EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+                return;
+            }
 
-// 清空
-PluginManager.registerCommand(EventConditionPro.pluginName, "clear", function (args) {
-    EventConditionPro_ClearTempValue(this)
-});
+            if (args[0] === "提交_事件" && args.length === 2) {
+                EventConditionPro_LastResult = EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+                // 清除临时变量
+                EventConditionPro_ClearTempValue(this)
+                return;
+            }
 
-// 独立开关
-PluginManager.registerCommand(EventConditionPro.pluginName, "selfSwitch", function (args) {
-    if (this._eventId > 0) {
-        const type = String(args.type);
-        const value = (args.value === "true");
+            if (args[0] === "清空临时变量" && args.length === 1) {
+                EventConditionPro_ClearTempValue(this)
+                return;
+            }
 
-        const key = [this._mapId, this._eventId, type];
-        $gameSelfSwitches.setValue(key, value);
-    }
-});
+            if (args[0] === "独立开关" && args.length === 3) {
+                if (this._eventId > 0) {
+                    const type = String(args[1]);
+                    const value = (args[2] === "true");
+
+                    const key = [this._mapId, this._eventId, type];
+                    $gameSelfSwitches.setValue(key, value);
+                }
+                return;
+            }
+        }
+    };
+}
+else if (Utils.RPGMAKER_NAME === 'MZ') {
+    // 条件
+    PluginManager.registerCommand(EventConditionPro.pluginName, "condition_event", function (args) {
+        EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+    });
+
+    // 变量
+    PluginManager.registerCommand(EventConditionPro.pluginName, "variable_event", function (args) {
+        EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+    });
+
+    // 运算
+    PluginManager.registerCommand(EventConditionPro.pluginName, "expression_event", function (args) {
+        EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+    });
+
+    // 输出
+    PluginManager.registerCommand(EventConditionPro.pluginName, "log_event", function (args) {
+        EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+    });
+
+    // 提交
+    PluginManager.registerCommand(EventConditionPro.pluginName, "submit_event", function (args) {
+        EventConditionPro_LastResult = EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
+        // 清除临时变量
+        EventConditionPro_ClearTempValue(this)
+    });
+
+    // 清空
+    PluginManager.registerCommand(EventConditionPro.pluginName, "clear", function (args) {
+        EventConditionPro_ClearTempValue(this)
+    });
+
+    // 独立开关
+    PluginManager.registerCommand(EventConditionPro.pluginName, "selfSwitch", function (args) {
+        if (this._eventId > 0) {
+            const type = String(args.type);
+            const value = (args.value === "true");
+
+            const key = [this._mapId, this._eventId, type];
+            $gameSelfSwitches.setValue(key, value);
+        }
+    });
+}
 
 // 用于脚本的函数，获取上一次运算的结果
 var EventConditionPro_GetLastResult = function () {
@@ -905,15 +986,35 @@ var EventConditionPro_ProcessPluginCommand = function (event, outer, eventItem) 
         return null
     }
 
-    const commandName = eventItem.parameters[1]
-    const args = eventItem.parameters[3]
-    // 当前事件页使用出现条件
+    let commandName = null
+    let args = null
+    if (Utils.RPGMAKER_NAME === 'MV') {
+        let params = eventItem._params[0].split(" ");
+        params.shift();
+        commandName = params.shift();
+        args = params
+    }
+    else if (Utils.RPGMAKER_NAME === 'MZ') {
+        commandName = eventItem.parameters[1]
+        args = eventItem.parameters[3]
+    }
+
+    // 出现条件启用
     if (commandName === "enable") {
         return args.enable === "true"
     }
+    else if (commandName === "出现条件启用") {
+        return args[0] === "true"
+    }
     // 条件
-    else if (commandName === "condition" || commandName === "condition_event") {
-        const conditions = JsonEx.parse(args.conditions);
+    else if (commandName === "condition" || commandName === "condition_event" || commandName === "条件_出现" || commandName === "条件_事件") {
+        let conditions = null
+        if (commandName === "条件_出现" || commandName === "条件_事件") {
+            conditions = JsonEx.parse(args[0]);
+        }
+        else {
+            conditions = JsonEx.parse(args.conditions);
+        }
         for (let i = 0; i < conditions.length; i++) {
             const condition = JsonEx.parse(conditions[i])
 
@@ -1193,8 +1294,14 @@ var EventConditionPro_ProcessPluginCommand = function (event, outer, eventItem) 
         return true
     }
     // 变量
-    else if (commandName === "variable" || commandName === "variable_event") {
-        const variables = JsonEx.parse(args.variables);
+    else if (commandName === "variable" || commandName === "variable_event" || commandName === "变量_出现" || commandName === "变量_事件") {
+        let variables = null
+        if (commandName === "变量_出现" || commandName === "变量_事件") {
+            variables = JsonEx.parse(args[0]);
+        }
+        else {
+            variables = JsonEx.parse(args.variables);
+        }
         for (let i = 0; i < variables.length; i++) {
             const variable = JsonEx.parse(variables[i])
 
@@ -1218,9 +1325,15 @@ var EventConditionPro_ProcessPluginCommand = function (event, outer, eventItem) 
 
         return true
     }
-        // 运算
-    else if (commandName === "expression" || commandName === "expression_event") {
-        const operates = JsonEx.parse(args.operates);
+    // 运算
+    else if (commandName === "expression" || commandName === "expression_event" || commandName === "运算_出现" || commandName === "运算_事件") {
+        let operates = null
+        if (commandName === "运算_出现" || commandName === "运算_事件") {
+            operates = JsonEx.parse(args[0]);
+        }
+        else {
+            operates = JsonEx.parse(args.operates);
+        }
         for (let i = 0; i < operates.length; i++) {
             const operate = JsonEx.parse(operates[i])
 
@@ -1238,20 +1351,40 @@ var EventConditionPro_ProcessPluginCommand = function (event, outer, eventItem) 
         return true
     }
     // 输出
-    else if (commandName === "log" || commandName === "log_event") {
-        const name = EventConditionPro_GetName(args.name);
+    else if (commandName === "log" || commandName === "log_event" || commandName === "输出_出现" || commandName === "输出_事件") {
+        let name = null
+        if (commandName === "输出_出现" || commandName === "输出_事件") {
+            name = EventConditionPro_GetName(args[0]);
+        }
+        else {
+            name = EventConditionPro_GetName(args.name);
+        }
         console.log(EventConditionPro_GetEventName(event) + " " + name + "：" + EventConditionPro_GetTempValue(outer, name))
         return true
     }
-    // 提交结果
-    else if (commandName === "submit" || commandName === "submit_event") {
-        const name = EventConditionPro_GetName(args.name);
+    // 提交
+    else if (commandName === "submit" || commandName === "submit_event" || commandName === "提交_出现" || commandName === "提交_事件") {
+        let name = null
+        if (commandName === "提交_出现" || commandName === "提交_事件") {
+            name = EventConditionPro_GetName(args[0]);
+        }
+        else {
+            name = EventConditionPro_GetName(args.name);
+        }
         return EventConditionPro_GetTempValue(outer, name)
     }
     // 触发按键
-    else if (commandName === "input") {
-        const type = String(args.type);
-        const keyCode = Number(args.keyCode);
+    else if (commandName === "input" || commandName === "触发按键") {
+        let type = null
+        let keyCode = null
+        if (commandName === "触发按键") {
+            type = "Pressed"
+            keyCode = String(args[0]);
+        }
+        else {
+            type = String(args.type);
+            keyCode = Number(args.keyCode);
+        }
         let keyName = String(keyCode)
         // 不存在此按键则新增
         if (!(keyCode in Input.keyMapper)) {
@@ -1298,7 +1431,7 @@ var EventConditionPro_ProcessConditions = function (event, outer, conditions) {
     for (let index = 0; index < conditions.length; ++index) {
         let re = EventConditionPro_ProcessPluginCommand(event, outer, conditions[index])
         const commandName = conditions[index].parameters[1]
-        // submit提交结果
+        // submit提交
         if (commandName === "submit") {
             EventConditionPro_ClearTempValue(outer)
             return re
