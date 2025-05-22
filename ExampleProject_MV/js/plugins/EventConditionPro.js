@@ -113,23 +113,32 @@
  *    ♦ 按键：填写KeyCode，可通过百度得到，如R为82
  *    ♦ 示例：逻辑增强 按键 82
  *  
- * @param condition
+ * @param conditionEditor
  * @text 条件转换
  * @desc MV版本下，可以在这里编辑之后粘贴到插件指令里
  * @type struct<Condition>[]
  * @default []
  * 
- * @param variable
+ * @param variableEditor
  * @text 变量转换
  * @desc MV版本下，可以在这里编辑之后粘贴到插件指令里
  * @type struct<Variable>[]
  * @default []
  * 
- * @param expression
+ * @param expressionEditor
  * @text 运算转换
  * @desc MV版本下，可以在这里编辑之后粘贴到插件指令里
  * @type struct<Operate>[]
  * @default []
+ * 
+ * @param other
+ * @text =======================================================
+ * @desc 用于隔离MV版本和MZ版本
+ * 
+ * @param other2
+ * @text 以下是乱码，不要管
+ *
+ * @param other3
  * 
  * 
  * 
@@ -330,6 +339,7 @@
  * @text 条件类型
  * @desc 条件类型
  * @type select
+ * @default switch
  * 
  * @option 临时变量(开关)
  * @value tempSwicth
@@ -339,7 +349,7 @@
  * @value switch
  * @option 变量
  * @value variable
- * @option 独立开关
+ * @option 独立_开关
  * @value selfSwitch
  * @option 时间
  * @value timer
@@ -494,6 +504,7 @@
 
 var EventConditionPro = EventConditionPro || {};
 EventConditionPro.pluginName = "EventConditionPro"
+EventConditionPro.pluginToken = "逻辑增强"
 EventConditionPro.param = PluginManager.parameters(EventConditionPro.pluginName);
 // 出现条件
 EventConditionPro.enable = ["enable", "启用_出现"]
@@ -514,6 +525,12 @@ EventConditionPro.appearCondition = [
 ]
 // 触发条件
 EventConditionPro.triggers = ["input", "按键"]
+if (Utils.RPGMAKER_NAME === 'MV') {
+    EventConditionPro.commandCode = 356
+}
+else if (Utils.RPGMAKER_NAME === 'MZ') {
+    EventConditionPro.commandCode = 357
+}
 
 // ============================================================================= //
 // 插件指令，用于事件页，this指向Game_Interpreter
@@ -526,7 +543,7 @@ if (Utils.RPGMAKER_NAME === 'MV') {
     var EventConditionPro_Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function (command, args) {
         EventConditionPro_Game_Interpreter_pluginCommand.call(this, command, args);
-        if (command === "逻辑增强") {
+        if (command === EventConditionPro.pluginToken) {
             if (args[0] === "条件_事件" && args.length === 2) {
                 EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
                 return;
@@ -1112,7 +1129,13 @@ var EventConditionPro_ProcessPluginCommand = function (event, outer, eventItem) 
             // 时间
             else if (type === "timer") {
                 if ($gameTimer.isWorking()) {
-                    const value1 = $gameTimer.frames() / 60;
+                    let value1 = null
+                    if (Utils.RPGMAKER_NAME === 'MV') {
+                        value1 = $gameTimer.seconds();
+                    }
+                    else if (Utils.RPGMAKER_NAME === 'MZ') {
+                        value1 = $gameTimer.frames() / 60;
+                    }
                     const value2 = EventConditionPro_GetVariableValue(event, outer, condition.checkTarget2)
                     const re = EventConditionPro_Check(checkType, value1, value2)
                     if (resultName.length > 0) {
@@ -1446,7 +1469,17 @@ var EventConditionPro_ProcessConditions = function (event, outer, conditions) {
     // 按顺序逐条处理
     for (let index = 0; index < conditions.length; ++index) {
         let re = EventConditionPro_ProcessPluginCommand(event, outer, conditions[index])
-        const commandName = conditions[index].parameters[1]
+
+        let commandName = null
+        if (Utils.RPGMAKER_NAME === 'MV') {
+            let params = conditions[index].parameters[0].split(" ");
+            params.shift();
+            commandName = params.shift();
+        }
+        else if (Utils.RPGMAKER_NAME === 'MZ') {
+            commandName = conditions[index].parameters[1]
+        }
+
         // submit提交
         if (EventConditionPro.submit.includes(commandName)) {
             EventConditionPro_ClearTempValue(outer)
@@ -1485,13 +1518,23 @@ var EventConditionPro_Load = function (event, outer) {
     let Enable = false
     for (let index = 0; index < outer.list.length; ++index) {
         // 当前事件是否是插件指令
-        if (outer.list[index].code === 357) {
-            const pluginName = outer.list[index].parameters[0]
+        if (outer.list[index].code === EventConditionPro.commandCode) {
+            let pluginName = null
+            let commandName = null
+            if (Utils.RPGMAKER_NAME === 'MV') {
+                let params = outer.list[index].parameters[0].split(" ");
+                pluginName = params.shift();
+                commandName = params.shift();
+            }
+            else if (Utils.RPGMAKER_NAME === 'MZ') {
+                pluginName = outer.list[index].parameters[0]
+                commandName = outer.list[index].parameters[1]
+            }
+
             // 检查是否是当前插件
-            if (pluginName.includes(EventConditionPro.pluginName)) {
-                const pluginCommand = outer.list[index].parameters[1]
+            if (pluginName.includes(EventConditionPro.pluginName) || pluginName.includes(EventConditionPro.pluginToken)) {
                 // 是enbale
-                if (EventConditionPro.enable.includes(pluginCommand)) {
+                if (EventConditionPro.enable.includes(commandName)) {
                     // 要考虑input，所以false下不能直接结束
                     if (EventConditionPro_ProcessPluginCommand(event, outer, outer.list[index])) {
                         Enable = true
@@ -1499,11 +1542,11 @@ var EventConditionPro_Load = function (event, outer) {
                     }
                 }
                 // 是触发条件
-                else if (EventConditionPro.triggers.includes(pluginCommand)) {
+                else if (EventConditionPro.triggers.includes(commandName)) {
                     outer.EventConditionPro_Triggers.push(outer.list[index])
                 }
                 // 是出现条件
-                else if (EventConditionPro.appearCondition.includes(pluginCommand)){
+                else if (EventConditionPro.appearCondition.includes(commandName)){
                     outer.EventConditionPro_Contions.push(outer.list[index])
                 }
             }
