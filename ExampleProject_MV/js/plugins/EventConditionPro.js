@@ -543,6 +543,19 @@ if (Utils.RPGMAKER_NAME === 'MV') {
     var EventConditionPro_Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function (command, args) {
         EventConditionPro_Game_Interpreter_pluginCommand.call(this, command, args);
+
+        let params = this.currentCommand().parameters[0].split(" ");
+        // 去除空格
+        for (let i = params.length - 1; i >= 0; --i) {
+            params[i] = params[i].trim();
+            if (params[i].length === 0) {
+                params.splice(i, 1);
+            }
+        }
+
+        command = params.shift();
+        args = params
+
         if (command === EventConditionPro.pluginToken) {
             if (args[0] === "条件_事件" && args.length === 2) {
                 EventConditionPro_ProcessPluginCommand(this, this, this.currentCommand())
@@ -1023,6 +1036,14 @@ var EventConditionPro_ProcessPluginCommand = function (event, outer, eventItem) 
     let args = null
     if (Utils.RPGMAKER_NAME === 'MV') {
         let params = eventItem.parameters[0].split(" ");
+         // 去除空格
+        for (let i = params.length - 1; i >= 0; --i) {
+            params[i] = params[i].trim();
+            if (params[i].length === 0) {
+                params.splice(i, 1);
+            }
+        }
+
         params.shift();
         commandName = params.shift();
         args = params
