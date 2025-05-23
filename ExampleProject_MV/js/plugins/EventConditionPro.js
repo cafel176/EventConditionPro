@@ -78,6 +78,7 @@
  *    ♦ 运算类型
  *    ♦ 运算对象2取负数
  *    ♦ 运算对象2：写[变量]，随机数是较大值，脚本不写
+ *    ♦ 条件：运算类型为条件时才需要填写，写[开关]，开关为true则返回运算对象1反之返回运算对象2
  *    ♦ 示例：逻辑增强 变量_出现 内容
  *    ♦ 示例：逻辑增强 变量_事件 内容
  * 
@@ -443,6 +444,8 @@
  * @value max
  * @option 取小
  * @value min
+ * @option 条件
+ * @value condition
  * @option 随机数
  * @value random
  * @option 脚本
@@ -457,6 +460,10 @@
  * @param checkTarget2
  * @text 运算对象2
  * @desc 写[变量]，随机数是较大值，脚本不写
+ * 
+ * @param condition
+ * @text 条件
+ * @desc 运算类型为条件时才需要填写，写[开关]，开关为true则返回运算对象1反之返回运算对象2
  * 
  */
 
@@ -1374,6 +1381,12 @@ var EventConditionPro_ProcessPluginCommand = function (event, outer, eventItem) 
             if (checkType === "script") {
                 const re = !!eval(variable.checkTarget1)
                 EventConditionPro_SetVariableValue(event, outer, resultName, (negative1 ? -1 : 1) * re)
+            }
+            else if (checkType === "condition") {
+                const check = EventConditionPro_GetSwitchValue(event, outer, variable.condition)
+                const value1 = EventConditionPro_GetVariableValue(event, outer, variable.checkTarget1)
+                const value2 = EventConditionPro_GetVariableValue(event, outer, variable.checkTarget2)
+                EventConditionPro_SetVariableValue(event, outer, resultName, (check ? value1 : value2))
             }
             else {
                 const value1 = EventConditionPro_GetVariableValue(event, outer, variable.checkTarget1)
