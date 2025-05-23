@@ -232,6 +232,8 @@ MZ/MV 视频教程：
 
 ![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex3.png?raw=true '示例')
 
+<br/>
+
 4. 将临时变量temp作为结果提交，temp的开关与否将决定本事件是否出现
 
 ![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex4.png?raw=true '示例')
@@ -240,6 +242,307 @@ MZ/MV 视频教程：
 
 #### 事件2
 
+1. 判断开关DDD是否不等于开关EEE，使用开关类型，判断开关4是否不等于开关5，并将结果保存在另一个临时变量temp内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex5.png?raw=true '示例')
+
+<br/>
+
+#### 事件3
+
+1. 判断开关DDD是否等于独立开关D，使用开关类型，判断开关4是否等于独立开关D，并将结果保存在另一个临时变量temp1内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex6.png?raw=true '示例')
+
+<br/>
+
+2. 判断独立开关A是否打开，使用独立开关类型，判断独立开关A是否等于true，并将结果保存在另一个临时变量temp2内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex7.png?raw=true '示例')
+
+<br/>
+
+3. 判断临时变量temp1与temp2，使用运算，并将结果保存在另一个临时变量temp内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex8.png?raw=true '示例')
+
+<br/>
+
+### 示例群2
+
+地图左下角，本示例群演示插件指令内变量的写法和使用
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex9.png?raw=true '示例')
+
+<br/>
+
+最下方事件互动设置变量DDD=5 EEE=6，上方三个事件进行出现条件判断，顺序由上往下依次是：
+
+<br/>
+
+#### 事件1
+
+1. 临时变量temp1 = 2 + 3，使用变量直接赋值temp1
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex10.png?raw=true '示例')
+
+<br/>
+
+2. 判断变量DDD是否等于temp1，使用临时变量类型，判断temp1是否等于变量4，并将结果保存在另一个临时变量temp内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex11.png?raw=true '示例')
+
+<br/>
+
+#### 事件2
+
+1. 判断变量DDD是否不等于变量EEE，使用变量类型，判断变量4是否不等于变量5，并将结果保存在另一个临时变量temp内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex12.png?raw=true '示例')
+
+<br/>
+
+#### 事件3
+
+1. 判断变量DDD是否等于数值5，使用变量类型，判断变量4是否等于5，并将结果保存在另一个临时变量temp内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex13.png?raw=true '示例')
+
+<br/>
+
+### 示例群3
+
+地图正下，本示例群演示多种不同条件的使用
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex14.png?raw=true '示例')
+
+<br/>
+
+最下方六个事件进行出现条件判断，顺序由左往右依次是：物品数量大于3、武器数量大于5、防具数量大于2、金币数量大于等于999、事件朝向为向上、人物凯西是否在队伍中
+
+<br/>
+
+### 示例群4
+
+地图左测，本示例群演示插件指令内变量的根据条件赋值以及根据计时器判断事件出现条件
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex9.png?raw=true '示例')
+
+<br/>
+
+右侧事件根据计时器判断事件出现条件，计时器时间小于60秒时事件出现
+
+<br/>
+
+左侧事件互动设置开关III开启，旁边的事件进行出现条件判断：
+
+<br/>
+
+#### 事件
+
+1. 根据开关9判断采用值5还是值7，开关打开采用5，未打开采用7，保存在临时变量temp里
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex16.png?raw=true '示例')
+
+<br/>
+
+2. 判断临时变量temp是否等于5，使用临时变量类型，并将结果保存在另一个临时变量result内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex17.png?raw=true '示例')
+
+<br/>
+
+### 示例群5
+
+地图右测，本示例群演示插件指令内事件位置和朝向的判断
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex18.png?raw=true '示例')
+
+<br/>
+
+顺序由上往下依次是：
+
+<br/>
+
+#### 事件1
+
+1. 将玩家角色朝向记录在临时变量temp1
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex19.png?raw=true '示例')
+
+<br/>
+
+2. 将当前事件角色朝向记录在临时变量temp2
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex20.png?raw=true '示例')
+
+<br/>
+
+3. 将临时变量temp1和临时变量temp2求和，并将结果保存在另一个临时变量temp内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex21.png?raw=true '示例')
+
+<br/>
+
+4. 判断临时变量temp是否不等于10，即玩家和本事件朝向不相对，并将结果保存在另一个临时变量result2内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex22.png?raw=true '示例')
+
+<br/>
+
+#### 事件2
+
+1. 比较玩家角色位置X坐标是否不等于7，将玩家角色位置X坐标在临时变量temp5，，并将结果保存在另一个临时变量temp3内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex23.png?raw=true '示例')
+
+<br/>
+
+2. 比较玩家角色位置Y坐标是否不等于7，将玩家角色位置Y坐标在临时变量temp6，，并将结果保存在另一个临时变量temp4内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex24.png?raw=true '示例')
+
+<br/>
+
+3. 将临时变量temp3和临时变量temp4求或，即玩家不站在(7，7)位置，并将结果保存在另一个临时变量result1内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex25.png?raw=true '示例')
+
+<br/>
+
+### 示例群6
+
+地图右侧，本示例群演示独立开关的使用
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex26.png?raw=true '示例')
+
+<br/>
+
+事件不断地使用插件指令打开独立开关跳转到下一页
+
+<br/>
+
+### 示例群7
+
+地图右上角，本示例群以及公共事件CCC DDD，演示插件指令内并行处理，以及公共事件内自动执行和并行处理的按键触发
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex27.png?raw=true '示例')
+
+<br/>
+
+按键触发可以与出现条件一起使用，按键KeyCode可以通过百度得到，如R S T分别是82 83 84
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex28.png?raw=true '示例')
+
+<br/>
+
+### 示例群8
+
+地图右上角，本示例群以及公共事件AAA BBB，演示插件指令如何在事件页内使用用于条件分歧
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex29.png?raw=true '示例')
+
+<br/>
+
+在条件分歧内使用脚本 EventConditionPro_GetLastResult() ，即可获取最近的提交结果并清除所有临时变量
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex30.png?raw=true '示例')
+
+<br/>
+
+### 示例群9
+
+地图上方，本示例群演示插件指令内运算结果保存回RM变量，开关以及独立开关
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex31.png?raw=true '示例')
+
+<br/>
+
+上方两个事件互动可以打开开关FFF，并将变量FFF赋值为4
+
+<br/>
+
+最下方事件互动会进行逻辑判断并将结果保存回RM变量，开关以及独立开关
+
+<br/>
+
+#### 事件
+
+1. 将变量FFF的值+4并保存到变量GGG内，变量6的值与4求和保存到变量7
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex32.png?raw=true '示例')
+
+<br/>
+
+2. 判断开关FFF是否没打开，将开关FFF当前值保存到开关GGG，并将结果保存回开关FFF
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex33.png?raw=true '示例')
+
+<br/>
+
+3. 判断开关GGG是否打开，并将结果保存在另一个临时变量temp1内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex34.png?raw=true '示例')
+
+<br/>
+
+4. 判断开关FFF是否没打开，并将结果保存在另一个临时变量temp2内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex35.png?raw=true '示例')
+
+<br/>
+
+5. 判断变量GGG是否等于8，并将结果保存在另一个临时变量temp3内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex36.png?raw=true '示例')
+
+<br/>
+
+6. 对临时变量temp1和临时变量temp2进行与运算，并将结果保存在另一个临时变量result内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex37.png?raw=true '示例')
+
+<br/>
+
+7. 对临时变量result和临时变量temp3进行与运算，并将结果保存回独立开关A内
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex38.png?raw=true '示例')
+
+<br/>
+
+### 示例群10
+
+地图左上角，本示例群演示多条出现条件的与或非组合用法
+
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex39.png?raw=true '示例')
+
+<br/>
+
+顺序由左往右依次是：
+
+<br/>
+
+#### 事件1
+
+判断 开关AAA = true 与 开关BBB = true 与 开关 CCC = true
+
+<br/>
+
+#### 事件2
+
+判断 变量AAA  + 变量BBB + 变量CCC >= 6
+
+<br/>
+
+#### 事件3
+
+判断 变量AAA >= 变量CCC 或 开关BBB = false 或 变量CCC < 1
+
+<br/>
+
+#### 事件4
+
+判断 变量AAA >= 1 或 开关BBB = true
 
 <br/>
 <br/>
