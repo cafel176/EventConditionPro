@@ -103,7 +103,7 @@ MZ/MV 视频教程：
 <br/>
 <br/>
 
-## 指令指令：
+## 插件指令：
 
 常用的插件指令
    * MV需要采用这种格式：逻辑增强 指令类型 指令参数
@@ -228,7 +228,7 @@ MZ/MV 视频教程：
 
 <br/>
 
-3. 判断DDD是否等于temp1，使用临时变量类型，判断temp1是否等于开关4，并将结果保存在另一个临时变量temp内
+3. 判断DDD是否等于temp1，使用临时开关类型，判断temp1是否等于开关4，并将结果保存在另一个临时变量temp内
 
 ![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex3.png?raw=true '示例')
 
@@ -276,6 +276,10 @@ MZ/MV 视频教程：
 4. 之后在插件指令内，填写好插件名，指令类型后，粘贴刚才复制的Json字符串即可
 
 ![参数](https://github.com/cafel176/EventConditionPro/blob/main/pic5.png?raw=true '参数')
+
+<br/>
+
+5. 想要修改已经写好的插件指令时，将写在里面的Json字符串复制，打开插件编辑器，右键对应的插件参数，选择“以文本编辑”，粘贴进去，即可再次通过UI调整Json
 
 <br/>
 
