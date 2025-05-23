@@ -326,7 +326,7 @@ MZ/MV 视频教程：
 
 地图左测，本示例群演示插件指令内变量的根据条件赋值以及根据计时器判断事件出现条件
 
-![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex9.png?raw=true '示例')
+![示例](https://github.com/cafel176/EventConditionPro/blob/main/ex15.png?raw=true '示例')
 
 <br/>
 
