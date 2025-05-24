@@ -14,7 +14,7 @@ QQ群：***792888538***   欢迎反馈遇到的问题和希望支持的功能
 
 <br/>
 
-MZ/MV 视频教程：
+MZ/MV 视频教程：https://www.bilibili.com/video/BV1LjjxzxEXQ
 
 <br/>
 <br/>
